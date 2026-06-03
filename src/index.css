@@ -1,0 +1,223 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --color-brand-blue: #2563eb;
+  --color-brand-blue-hover: #1d4ed8;
+  --color-brand-navy: #0f172a;
+  
+  --animate-fade-in: fade-in 0.2s ease-out forwards;
+  --animate-slide-up: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Custom Base Styling */
+html, body {
+  font-family: var(--font-sans);
+  background-color: #f5f6fa; /* FOGO Dashboard Light Gray-Blue Background */
+  color: #334155; /* Slate-700 */
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* FOGO Card Panels */
+.fogo-card {
+  background-color: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(241, 245, 249, 0.8);
+  transition: all 0.2s ease-in-out;
+}
+
+.fogo-card:hover {
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+.fogo-card-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
+  border: none;
+}
+
+/* FOGO Form Inputs */
+.fogo-input {
+  background-color: #f8fafc;
+  border: 1.5px solid #f1f5f9;
+  border-radius: 12px;
+  color: #0f172a;
+  transition: all 0.15s ease-in-out;
+}
+
+.fogo-input:focus {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}
+
+/* Buttons */
+.fogo-btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.fogo-btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+}
+
+.fogo-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.fogo-btn-secondary {
+  background-color: #ffffff;
+  color: #475569;
+  border: 1.5px solid #e2e8f0;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.15s ease-in-out;
+}
+
+.fogo-btn-secondary:hover:not(:disabled) {
+  background-color: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* Badges */
+.trend-pill-green {
+  background-color: #e6f9f0;
+  color: #059669;
+  font-weight: 600;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.trend-pill-red {
+  background-color: #fee2e2;
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Table overrides */
+.fogo-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fogo-table th {
+  color: #64748b;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+
+.fogo-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f8fafc;
+  font-size: 12px;
+}
+
+/* Dark Mode Overrides (Sleek Slate Theme) */
+.dark {
+  background-color: #0b0f19;
+  color: #94a3b8;
+}
+
+.dark html, .dark body {
+  background-color: #0b0f19;
+  color: #94a3b8;
+}
+
+.dark .fogo-card {
+  background-color: #131722;
+  border-color: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.dark .fogo-card:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.dark .fogo-input {
+  background-color: #0b0f19;
+  border-color: #222533;
+  color: #f1f5f9;
+}
+
+.dark .fogo-input:focus {
+  background-color: #131722;
+  border-color: #3b82f6;
+}
+
+.dark .fogo-btn-secondary {
+  background-color: #131722;
+  color: #94a3b8;
+  border-color: #222533;
+}
+
+.dark .fogo-btn-secondary:hover {
+  background-color: #0b0f19;
+  color: #f1f5f9;
+}
+
+.dark .fogo-table th {
+  border-bottom-color: #222533;
+}
+
+.dark .fogo-table td {
+  border-bottom-color: #131722;
+}
