@@ -149,25 +149,24 @@ export default function Laporan() {
         {/* Exporter triggers */}
         <div className="flex items-center gap-2">
           <button
-            onClick={() => handleDownload("PDF")}
-            disabled={downloading}
-            className="fogo-btn-secondary px-4 py-2.5 text-xs flex items-center gap-1.5 disabled:opacity-50"
+            onClick={() => window.print()}
+            className="fogo-btn-secondary px-4 py-2.5 text-xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Download className="w-4 h-4" /> {downloading ? "Mengekspor..." : "Unduh PDF"}
+            <Printer className="w-4 h-4" /> Cetak / Unduh PDF
           </button>
           <button
             onClick={() => handleDownload("Excel")}
             disabled={downloading}
-            className="fogo-btn-primary px-4 py-2.5 text-xs flex items-center gap-1.5 disabled:opacity-50"
+            className="fogo-btn-primary px-4 py-2.5 text-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
           >
-            <Printer className="w-4 h-4" /> {downloading ? "Mengunduh..." : "Cetak Excel"}
+            <Download className="w-4 h-4" /> {downloading ? "Mengekspor..." : "Ekspor Excel"}
           </button>
         </div>
       </div>
 
       {/* Selector tab list */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800">
-        {["labarugi", "neraca", "aruskas"].map(tab => (
+      <div className="flex border-b border-slate-200 dark:border-slate-800 flex-wrap">
+        {["labarugi", "neraca", "aruskas", "perubahanekuitas"].map(tab => (
           <button
             key={tab}
             onClick={() => setReportType(tab)}
@@ -180,6 +179,7 @@ export default function Laporan() {
             {tab === "labarugi" && "Laporan Laba Rugi"}
             {tab === "neraca" && "Laporan Neraca"}
             {tab === "aruskas" && "Arus Kas (Direct)"}
+            {tab === "perubahanekuitas" && "Perubahan Ekuitas"}
           </button>
         ))}
       </div>
@@ -193,7 +193,7 @@ export default function Laporan() {
       )}
 
       {/* Render selected reports */}
-      <div className="fogo-card p-6 md:p-8 space-y-6 max-w-4xl mx-auto bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+      <div id="print-area" className="fogo-card p-6 md:p-8 space-y-6 max-w-4xl mx-auto bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
         
         {/* Report Header Logo */}
         <div className="border-b border-slate-100 dark:border-slate-800 pb-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
@@ -205,6 +205,7 @@ export default function Laporan() {
               {reportType === "labarugi" && "LAPORAN LABA RUGI KOMPREHENSIF"}
               {reportType === "neraca" && "LAPORAN POSISI KEUANGAN (NERACA)"}
               {reportType === "aruskas" && "LAPORAN ARUS KAS METODE LANGSUNG"}
+              {reportType === "perubahanekuitas" && "LAPORAN PERUBAHAN EKUITAS"}
             </p>
           </div>
           <div className="text-right text-xs">
@@ -446,6 +447,56 @@ export default function Laporan() {
                 <span className="font-heading text-xs tracking-wider uppercase font-black">SALDO KAS & BANK AKHIR PERIODE</span>
                 <span className="text-base font-bold">Rp {cf.endingCash.toLocaleString()}</span>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 4. Perubahan Ekuitas Render */}
+        {reportType === "perubahanekuitas" && (
+          <div className="space-y-5 text-xs font-sans text-slate-700 dark:text-slate-350">
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-800 dark:text-white uppercase font-heading text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 pb-1">
+                RINCIAN EKUITAS MODAL
+              </h4>
+              <div className="flex justify-between py-1.5">
+                <span className="font-semibold uppercase text-slate-500">Modal Saham Awal (1 Mei 2026)</span>
+                <span className="font-bold text-slate-850 dark:text-white">Rp {neraca.modal.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between py-1.5">
+                <span className="font-semibold uppercase text-slate-500">Tambahan Modal Disetor (Periode Berjalan)</span>
+                <span className="font-bold text-slate-850 dark:text-white">Rp 0</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-t border-slate-100 dark:border-slate-800">
+                <span className="font-bold uppercase text-slate-700 dark:text-slate-300">Total Modal Saham Akhir</span>
+                <span className="font-bold text-slate-800 dark:text-white">Rp {neraca.modal.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-800 dark:text-white uppercase font-heading text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-800 pb-1">
+                SALDO LABA (RETAINED EARNINGS)
+              </h4>
+              <div className="flex justify-between py-1.5">
+                <span className="font-semibold uppercase text-slate-500">Saldo Laba Awal (1 Mei 2026)</span>
+                <span className="font-bold text-slate-850 dark:text-white">Rp {neraca.saldoLaba.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between py-1.5 text-emerald-600 dark:text-emerald-400">
+                <span className="font-semibold uppercase">Laba Bersih Tahun Berjalan</span>
+                <span className="font-bold">Rp {lr.labaBersih.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between py-1.5 text-rose-600 dark:text-rose-455">
+                <span className="font-semibold uppercase">Distribusi Dividen / Prive</span>
+                <span className="font-bold">(Rp 0)</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-t border-slate-100 dark:border-slate-800">
+                <span className="font-bold uppercase text-slate-700 dark:text-slate-300">Total Saldo Laba Akhir</span>
+                <span className="font-bold text-slate-800 dark:text-white">Rp {(neraca.saldoLaba + lr.labaBersih).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between bg-blue-50 dark:bg-blue-950/30 p-4 rounded-2xl font-bold text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 mt-4">
+              <span className="font-heading text-xs tracking-wider uppercase font-black">TOTAL EKUITAS AKHIR PERIODE</span>
+              <span className="text-lg font-bold">Rp {neraca.totalEkuitas.toLocaleString()}</span>
             </div>
           </div>
         )}

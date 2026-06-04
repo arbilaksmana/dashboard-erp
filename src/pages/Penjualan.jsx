@@ -1,7 +1,8 @@
 import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
-import { Plus, Check, Search, CreditCard, Users, FileText, AlertCircle, ShoppingBag, Trash } from "lucide-react";
+import { Plus, Check, Search, CreditCard, Users, FileText, AlertCircle, ShoppingBag, Trash, BarChart2 } from "lucide-react";
 import Modal from "../components/Modal";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 export default function Penjualan() {
   const {
@@ -198,13 +199,43 @@ export default function Penjualan() {
     .filter(i => i.status !== "Lunas")
     .reduce((sum, i) => sum + (i.amount - (i.paidAmount || 0)), 0);
 
+  const getMonthlySalesChartData = () => {
+    const grouped = {};
+    salesInvoices.forEach(inv => {
+      const dateStr = inv.date;
+      if (!grouped[dateStr]) {
+        grouped[dateStr] = { date: dateStr, Penjualan: 0 };
+      }
+      grouped[dateStr].Penjualan += inv.amount;
+    });
+    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+  };
+  const monthlySalesChartData = getMonthlySalesChartData();
+
+  const getItemReportData = () => {
+    const report = {};
+    salesInvoices.forEach(inv => {
+      inv.items.forEach(it => {
+        const itemObj = items.find(i => i.id === it.itemId);
+        const name = itemObj ? itemObj.name : it.itemId;
+        if (!report[it.itemId]) {
+          report[it.itemId] = { id: it.itemId, name, qtySold: 0, revenue: 0 };
+        }
+        report[it.itemId].qtySold += it.qty;
+        report[it.itemId].revenue += it.qty * it.price;
+      });
+    });
+    return Object.values(report);
+  };
+  const itemReportList = getItemReportData();
+
   return (
     <div className="space-y-6 animate-fade-in p-6 min-h-screen">
       
       {/* Sub-tabs header */}
       <div className="flex border-b border-slate-200 dark:border-slate-800 justify-between items-end flex-wrap gap-4">
         <div className="flex gap-2">
-          {["invoices", "pelanggan", "aging"].map(tab => (
+          {["invoices", "pelanggan", "aging", "report"].map(tab => (
             <button
               key={tab}
               onClick={() => setSubTab(tab)}
@@ -217,6 +248,7 @@ export default function Penjualan() {
               {tab === "invoices" && "Faktur Penjualan"}
               {tab === "pelanggan" && "Daftar Pelanggan"}
               {tab === "aging" && "Aging Piutang (AR)"}
+              {tab === "report" && "Laporan Penjualan"}
             </button>
           ))}
         </div>
@@ -412,6 +444,124 @@ export default function Penjualan() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Laporan Penjualan Tab */}
+      {subTab === "report" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">TOTAL PENJUALAN</span>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white font-heading">
+                  Rp {salesInvoices.reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                </h3>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                <BarChart2 className="w-5 h-5" />
+              </div>
+            </div>
+            
+            <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">PENJUALAN TUNAI (CASH)</span>
+                <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-heading">
+                  Rp {salesInvoices.filter(i => i.payMethod === "Cash").reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                </h3>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <Check className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">PENJUALAN KREDIT (AR)</span>
+                <h3 className="text-xl font-bold text-orange-600 dark:text-orange-400 font-heading">
+                  Rp {salesInvoices.filter(i => i.payMethod === "Credit").reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                </h3>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+
+          {/* Monthly Sales Trend Chart */}
+          <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-4">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-heading">
+                Tren Omset Penjualan Bulanan/Harian
+              </h4>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">Nilai total faktur penjualan yang diterbitkan</p>
+            </div>
+            <div className="h-64 w-full">
+              {monthlySalesChartData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                  Belum ada data penjualan tercatat.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlySalesChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.1} />
+                    <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0b0f19",
+                        borderColor: "#1e293b",
+                        borderRadius: "12px",
+                        color: "#fff",
+                        fontSize: "11px"
+                      }}
+                    />
+                    <Bar dataKey="Penjualan" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Nilai Penjualan" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          {/* Sales by Item Table */}
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase font-heading">Statistik Penjualan per Barang Jadi</h4>
+              <p className="text-[10px] text-slate-400">Rangkuman kuantitas terjual dan nilai omset masing-masing item barang</p>
+            </div>
+            <div className="fogo-card overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+              <div className="overflow-x-auto">
+                <table className="fogo-table">
+                  <thead>
+                    <tr>
+                      <th className="text-left">Kode Item</th>
+                      <th className="text-left">Nama Barang Jadi</th>
+                      <th className="text-center w-36">Total Terjual</th>
+                      <th className="text-right w-52">Total Kontribusi Omset (Rp)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                    {itemReportList.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+                          Belum ada item terjual.
+                        </td>
+                      </tr>
+                    ) : (
+                      itemReportList.map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                          <td className="px-4 py-3 text-xs font-mono font-bold text-blue-600 dark:text-blue-400">{row.id}</td>
+                          <td className="px-4 py-3 text-xs font-bold text-slate-800 dark:text-white uppercase">{row.name}</td>
+                          <td className="px-4 py-3 text-center text-xs font-semibold">{row.qtySold} unit</td>
+                          <td className="px-4 py-3 text-right text-xs font-bold text-slate-900 dark:text-white">Rp {row.revenue.toLocaleString()}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

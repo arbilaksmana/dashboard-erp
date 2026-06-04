@@ -16,6 +16,10 @@ export default function Pajak() {
   const [paymentAccount, setPaymentAccount] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  const [typeFilter, setTypeFilter] = useState("Semua");
+  const [selectedMonth, setSelectedMonth] = useState("Semua");
+  const [selectedYear, setSelectedYear] = useState("2026");
+
   const cashAccounts = accounts.filter(acc => ["1101", "1102"].includes(acc.code));
 
   const ppnKeluaran = taxTransactions
@@ -28,6 +32,18 @@ export default function Pajak() {
 
   const netPpn = ppnKeluaran - ppnMasukan;
 
+  const pph21Total = taxTransactions
+    .filter(t => t.taxType === "PPh 21")
+    .reduce((sum, t) => sum + t.taxAmount, 0);
+
+  const pph23Total = taxTransactions
+    .filter(t => t.taxType === "PPh 23")
+    .reduce((sum, t) => sum + t.taxAmount, 0);
+
+  const pphFinalTotal = taxTransactions
+    .filter(t => t.taxType === "PPh Final")
+    .reduce((sum, t) => sum + t.taxAmount, 0);
+
   const totalPaidTax = taxTransactions
     .filter(t => t.status === "Sudah Dibayar")
     .reduce((sum, t) => sum + t.taxAmount, 0);
@@ -35,6 +51,18 @@ export default function Pajak() {
   const totalOutstandingTax = taxTransactions
     .filter(t => t.status === "Belum Bayar")
     .reduce((sum, t) => sum + t.taxAmount, 0);
+
+  const filteredTaxTransactions = taxTransactions.filter(tx => {
+    const txDate = new Date(tx.date);
+    const txMonth = (txDate.getMonth() + 1).toString().padStart(2, '0');
+    const txYear = txDate.getFullYear().toString();
+    
+    const matchesType = typeFilter === "Semua" ? true : tx.taxType === typeFilter;
+    const matchesMonth = selectedMonth === "Semua" ? true : txMonth === selectedMonth;
+    const matchesYear = selectedYear === "Semua" ? true : txYear === selectedYear;
+    
+    return matchesType && matchesMonth && matchesYear;
+  });
 
   const handleOpenPayModal = (id) => {
     setSelectedTaxId(id);
@@ -113,25 +141,85 @@ export default function Pajak() {
       </div>
 
       {/* Tax Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="fogo-card p-6 flex flex-col justify-center space-y-1 bg-white dark:bg-slate-900">
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider block font-heading">TOTAL PPN MASUKAN (KREDIT PEMBELIAN)</span>
-          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">Rp {ppnMasukan.toLocaleString()}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="fogo-card p-4 flex flex-col justify-center space-y-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">PPN MASUKAN</span>
+          <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Rp {ppnMasukan.toLocaleString()}</div>
         </div>
-        <div className="fogo-card p-6 flex flex-col justify-center space-y-1 bg-white dark:bg-slate-900">
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-550 uppercase tracking-wider block font-heading">TOTAL PPN KELUARAN (PUNGUTAN PENJUALAN)</span>
-          <div className="text-lg font-bold text-blue-650 dark:text-blue-400">Rp {ppnKeluaran.toLocaleString()}</div>
+        <div className="fogo-card p-4 flex flex-col justify-center space-y-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">PPN KELUARAN</span>
+          <div className="text-sm font-bold text-blue-600 dark:text-blue-400">Rp {ppnKeluaran.toLocaleString()}</div>
+        </div>
+        <div className="fogo-card p-4 flex flex-col justify-center space-y-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">PPh 21 (KARYAWAN)</span>
+          <div className="text-sm font-bold text-amber-600 dark:text-amber-400">Rp {pph21Total.toLocaleString()}</div>
+        </div>
+        <div className="fogo-card p-4 flex flex-col justify-center space-y-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">PPh 23 (JASA)</span>
+          <div className="text-sm font-bold text-orange-600 dark:text-orange-400">Rp {pph23Total.toLocaleString()}</div>
+        </div>
+        <div className="fogo-card p-4 flex flex-col justify-center space-y-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">PPh FINAL (UMKM)</span>
+          <div className="text-sm font-bold text-purple-600 dark:text-purple-400">Rp {pphFinalTotal.toLocaleString()}</div>
         </div>
       </div>
 
       {/* Tax Transactions Ledger */}
       <div className="space-y-4">
-        <div className="space-y-1">
-          <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider font-heading">Daftar Transaksi Perpajakan</h3>
-          <p className="text-xs text-slate-400 dark:text-slate-500">Arsip transaksi perhitungan PPN Masukan & Keluaran sistem</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider font-heading">Daftar Transaksi Perpajakan</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Arsip transaksi perpajakan masa pajak berjalan</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2.5">
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="fogo-input px-3 py-1.5 text-xs font-sans"
+            >
+              <option value="Semua">Semua Jenis Pajak</option>
+              <option value="PPN Masukan">PPN Masukan</option>
+              <option value="PPN Keluaran">PPN Keluaran</option>
+              <option value="PPh 21">PPh 21</option>
+              <option value="PPh 23">PPh 23</option>
+              <option value="PPh Final">PPh Final</option>
+            </select>
+
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="fogo-input px-3 py-1.5 text-xs font-sans"
+            >
+              <option value="Semua">Semua Bulan</option>
+              <option value="01">Januari</option>
+              <option value="02">Februari</option>
+              <option value="03">Maret</option>
+              <option value="04">April</option>
+              <option value="05">Mei</option>
+              <option value="06">Juni</option>
+              <option value="07">Juli</option>
+              <option value="08">Agustus</option>
+              <option value="09">September</option>
+              <option value="10">Oktober</option>
+              <option value="11">November</option>
+              <option value="12">Desember</option>
+            </select>
+
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="fogo-input px-3 py-1.5 text-xs font-sans"
+            >
+              <option value="Semua">Semua Tahun</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+            </select>
+          </div>
         </div>
 
-        <div className="fogo-card overflow-hidden bg-white dark:bg-slate-900">
+        <div className="fogo-card overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
           <div className="overflow-x-auto">
             <table className="fogo-table">
               <thead>
@@ -146,39 +234,47 @@ export default function Pajak() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                {taxTransactions.map((tx) => {
-                  const isPaid = tx.status === "Sudah Dibayar" || tx.status === "Sudah Dikreditkan";
-                  return (
-                    <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="px-4 py-3 text-xs">{tx.date}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-slate-850 dark:text-white uppercase">{tx.taxType}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase">{tx.invoiceRef}</td>
-                      <td className="px-4 py-3 text-right text-xs">Rp {tx.baseAmount.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right text-xs font-bold text-slate-900 dark:text-white">Rp {tx.taxAmount.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          tx.status === "Sudah Dibayar" || tx.status === "Sudah Dikreditkan"
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                            : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 animate-pulse"
-                        }`}>
-                          {tx.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {!isPaid ? (
-                          <button
-                            onClick={() => handleOpenPayModal(tx.id)}
-                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-755 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
-                          >
-                            Setor Pajak
-                          </button>
-                        ) : (
-                          <span className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-semibold">Matched</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filteredTaxTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+                      Tidak ada transaksi pajak yang cocok dengan filter.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTaxTransactions.map((tx) => {
+                    const isPaid = tx.status === "Sudah Dibayar" || tx.status === "Sudah Dikreditkan";
+                    return (
+                      <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="px-4 py-3 text-xs">{tx.date}</td>
+                        <td className="px-4 py-3 text-xs font-bold text-slate-850 dark:text-white uppercase">{tx.taxType}</td>
+                        <td className="px-4 py-3 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase">{tx.invoiceRef}</td>
+                        <td className="px-4 py-3 text-right text-xs">Rp {tx.baseAmount.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right text-xs font-bold text-slate-900 dark:text-white">Rp {tx.taxAmount.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            tx.status === "Sudah Dibayar" || tx.status === "Sudah Dikreditkan"
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 animate-pulse"
+                          }`}>
+                            {tx.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {!isPaid ? (
+                            <button
+                              onClick={() => handleOpenPayModal(tx.id)}
+                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-755 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                            >
+                              Setor Pajak
+                            </button>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-semibold">Matched</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

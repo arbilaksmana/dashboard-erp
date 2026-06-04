@@ -12,11 +12,13 @@ export default function Akuntansi() {
 
   const [subTab, setSubTab] = useState("jurnal");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [journalFilter, setJournalFilter] = useState("all"); // "all", "general", "adjusting"
 
   // Form State for New Journal Entry
   const [date, setDate] = useState(new Date().toISOString().substring(0, 10));
   const [reference, setReference] = useState("");
   const [description, setDescription] = useState("");
+  const [isAdjusting, setIsAdjusting] = useState(false);
   const [details, setDetails] = useState([
     { accountCode: "", debit: 0, credit: 0 },
     { accountCode: "", debit: 0, credit: 0 }
@@ -67,10 +69,11 @@ export default function Akuntansi() {
     }
 
     try {
-      addJournalEntry(date, reference, description, details);
+      addJournalEntry(date, reference, description, details, isAdjusting);
       setDate(new Date().toISOString().substring(0, 10));
       setReference("");
       setDescription("");
+      setIsAdjusting(false);
       setDetails([
         { accountCode: "", debit: 0, credit: 0 },
         { accountCode: "", debit: 0, credit: 0 }
@@ -175,7 +178,7 @@ export default function Akuntansi() {
       {/* Sub-tabs header */}
       <div className="flex border-b border-slate-100 dark:border-[#222533] justify-between items-center flex-wrap gap-4">
         <div className="flex space-x-1">
-          {["jurnal", "bukubesar", "trialbalance"].map(tab => (
+          {["jurnal", "bukubesar", "trialbalance", "coa"].map(tab => (
             <button
               key={tab}
               onClick={() => setSubTab(tab)}
@@ -185,9 +188,10 @@ export default function Akuntansi() {
                   : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               }`}
             >
-              {tab === "jurnal" && "Jurnal Umum"}
+              {tab === "jurnal" && "Jurnal"}
               {tab === "bukubesar" && "General Ledger"}
               {tab === "trialbalance" && "Neraca Saldo"}
+              {tab === "coa" && "Daftar Akun (COA)"}
             </button>
           ))}
         </div>
@@ -205,9 +209,32 @@ export default function Akuntansi() {
       {/* Jurnal Umum Tab */}
       {subTab === "jurnal" && (
         <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-brand-navy dark:text-white font-heading">Daftar Jurnal Umum</h3>
-            <p className="text-[10px] text-slate-400 font-medium">Buku pencatatan jurnal transaksi harian</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-brand-navy dark:text-white font-heading">Daftar Buku Jurnal</h3>
+              <p className="text-[10px] text-slate-400 font-medium">Buku pencatatan jurnal transaksi harian</p>
+            </div>
+            
+            {/* Filter buttons */}
+            <div className="flex bg-slate-50 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-100 dark:border-[#222533] max-w-max">
+              {[
+                { id: "all", label: "Semua" },
+                { id: "general", label: "Jurnal Umum" },
+                { id: "adjusting", label: "Jurnal Penyesuaian" }
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setJournalFilter(f.id)}
+                  className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                    journalFilter === f.id
+                      ? "bg-brand-blue text-white shadow-sm"
+                      : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="fogo-card overflow-hidden">
@@ -216,40 +243,53 @@ export default function Akuntansi() {
                 <thead className="bg-[#f8fafc] dark:bg-[#0b0f19] text-slate-400 font-semibold border-b border-slate-100 dark:border-[#222533]">
                   <tr>
                     <th className="p-4 w-32">Tanggal</th>
-                    <th className="p-4 w-40">Referensi</th>
+                    <th className="p-4 w-48">Referensi</th>
                     <th className="p-4">Deskripsi / Rekening Akun</th>
                     <th className="p-4 text-right w-44">Debet (Rp)</th>
                     <th className="p-4 text-right w-44">Kredit (Rp)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-[#222533]/30">
-                  {journalEntries.map(entry => (
-                    <React.Fragment key={entry.id}>
-                      {/* Master Row */}
-                      <tr className="bg-slate-50/50 dark:bg-slate-900/10 font-bold text-brand-navy dark:text-slate-200">
-                        <td className="p-4 font-mono">{entry.date}</td>
-                        <td className="p-4 font-mono text-brand-blue">{entry.reference}</td>
-                        <td className="p-4 font-heading text-xs" colSpan={3}>{entry.description}</td>
-                      </tr>
-                      {/* Details Rows */}
-                      {entry.details.map((detail, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/5 text-slate-600 dark:text-slate-300 font-mono text-[11px]">
-                          <td className="p-2"></td>
-                          <td className="p-2"></td>
-                          <td className="p-3 pl-8 flex items-center gap-1.5">
-                            <span className="text-slate-400">[{detail.accountCode}]</span>
-                            <span className={`font-sans font-semibold ${detail.credit > 0 ? "pl-8 text-slate-500 italic" : "text-brand-navy dark:text-white"}`}>{detail.accountName}</span>
+                  {journalEntries
+                    .filter(entry => {
+                      if (journalFilter === "general") return !entry.isAdjusting;
+                      if (journalFilter === "adjusting") return entry.isAdjusting;
+                      return true;
+                    })
+                    .map(entry => (
+                      <React.Fragment key={entry.id}>
+                        {/* Master Row */}
+                        <tr className="bg-slate-50/50 dark:bg-slate-900/10 font-bold text-brand-navy dark:text-slate-200">
+                          <td className="p-4 font-mono">{entry.date}</td>
+                          <td className="p-4 font-mono text-brand-blue flex items-center gap-1.5">
+                            {entry.reference}
+                            {entry.isAdjusting && (
+                              <span className="px-1.5 py-0.5 bg-amber-500/15 text-amber-500 text-[8px] font-black rounded-md tracking-wider">
+                                ADJUSTING
+                              </span>
+                            )}
                           </td>
-                          <td className="p-3 text-right font-semibold">
-                            {detail.debit > 0 ? detail.debit.toLocaleString() : "-"}
-                          </td>
-                          <td className="p-3 text-right font-semibold">
-                            {detail.credit > 0 ? detail.credit.toLocaleString() : "-"}
-                          </td>
+                          <td className="p-4 font-heading text-xs" colSpan={3}>{entry.description}</td>
                         </tr>
-                      ))}
-                    </React.Fragment>
-                  ))}
+                        {/* Details Rows */}
+                        {entry.details.map((detail, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/5 text-slate-600 dark:text-slate-300 font-mono text-[11px]">
+                            <td className="p-2"></td>
+                            <td className="p-2"></td>
+                            <td className="p-3 pl-8 flex items-center gap-1.5">
+                              <span className="text-slate-400">[{detail.accountCode}]</span>
+                              <span className={`font-sans font-semibold ${detail.credit > 0 ? "pl-8 text-slate-500 italic" : "text-brand-navy dark:text-white"}`}>{detail.accountName}</span>
+                            </td>
+                            <td className="p-3 text-right font-semibold">
+                              {detail.debit > 0 ? detail.debit.toLocaleString() : "-"}
+                            </td>
+                            <td className="p-3 text-right font-semibold">
+                              {detail.credit > 0 ? detail.credit.toLocaleString() : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -391,6 +431,45 @@ export default function Akuntansi() {
         </div>
       )}
 
+      {/* Chart of Accounts Tab */}
+      {subTab === "coa" && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-bold text-brand-navy dark:text-white font-heading">Daftar Akun (Chart of Accounts)</h3>
+            <p className="text-[10px] text-slate-400 font-medium">Klasifikasi perkiraan pembukuan PT. Catur Reka Pilarindo</p>
+          </div>
+
+          <div className="fogo-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-[#f8fafc] dark:bg-[#0b0f19] text-slate-400 font-semibold border-b border-slate-100 dark:border-[#222533]">
+                  <tr>
+                    <th className="p-4 w-32">Kode Akun</th>
+                    <th className="p-4">Nama Rekening Perkiraan</th>
+                    <th className="p-4 w-48">Kategori Perkiraan</th>
+                    <th className="p-4 text-right w-48">Saldo Terkini (Rp)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 dark:divide-[#222533]/30 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                  {accounts.map(acc => {
+                    return (
+                      <tr key={acc.code} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/5">
+                        <td className="p-4 font-bold text-brand-blue">{acc.code}</td>
+                        <td className="p-4 font-sans font-bold text-brand-navy dark:text-white">{acc.name}</td>
+                        <td className="p-4 font-sans text-slate-400">{acc.category}</td>
+                        <td className="p-4 text-right font-black text-brand-navy dark:text-white">
+                          Rp {acc.balance.toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Input Jurnal Umum Baru */}
       <Modal
         isOpen={isModalOpen}
@@ -434,6 +513,19 @@ export default function Akuntansi() {
               onChange={(e) => setDescription(e.target.value)}
               className="w-full fogo-input px-3.5 py-2.5 text-xs font-semibold"
             />
+          </div>
+
+          <div className="flex items-center gap-2 pb-1">
+            <input
+              type="checkbox"
+              id="isAdjustingCheckbox"
+              checked={isAdjusting}
+              onChange={(e) => setIsAdjusting(e.target.checked)}
+              className="rounded border-slate-300 dark:border-slate-700 text-brand-blue focus:ring-brand-blue w-4 h-4 cursor-pointer"
+            />
+            <label htmlFor="isAdjustingCheckbox" className="text-xs font-bold text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+              Tandai sebagai Jurnal Penyesuaian (Adjusting Entry)
+            </label>
           </div>
 
           {/* Double Entry Lines */}

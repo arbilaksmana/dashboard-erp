@@ -151,12 +151,47 @@ export const AppProvider = ({ children }) => {
   }, [theme]);
 
   // Role switching configuration
-  const menuByRole = {
-    "Admin": ["dashboard", "akuntansi", "kasbank", "penjualan", "pembelian", "persediaan", "produksi", "pajak", "laporan", "hakakses"],
-    "Staf Keuangan": ["dashboard", "akuntansi", "kasbank", "penjualan", "pembelian", "pajak", "laporan"],
-    "Staf Gudang": ["dashboard", "persediaan"],
-    "Staf Produksi": ["dashboard", "produksi", "persediaan"],
-    "Manajemen": ["dashboard", "laporan"]
+  const [menuByRole, setMenuByRole] = useState(() => {
+    const saved = localStorage.getItem("erp_menu_by_role");
+    return saved ? JSON.parse(saved) : {
+      "Admin": ["dashboard", "akuntansi", "kasbank", "penjualan", "pembelian", "persediaan", "produksi", "pajak", "laporan", "hakakses"],
+      "Staf Keuangan": ["dashboard", "akuntansi", "kasbank", "penjualan", "pembelian", "pajak", "laporan"],
+      "Staf Gudang": ["dashboard", "persediaan"],
+      "Staf Produksi": ["dashboard", "produksi", "persediaan"],
+      "Manajemen": ["dashboard", "laporan"]
+    };
+  });
+
+  const [reconciledIds, setReconciledIds] = useState(() => {
+    const saved = localStorage.getItem("erp_reconciled_ids");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("erp_menu_by_role", JSON.stringify(menuByRole));
+  }, [menuByRole]);
+
+  useEffect(() => {
+    localStorage.setItem("erp_reconciled_ids", JSON.stringify(reconciledIds));
+  }, [reconciledIds]);
+
+  const updateRolePermissions = (roleName, newTabs) => {
+    setMenuByRole(prev => ({
+      ...prev,
+      [roleName]: newTabs
+    }));
+    logAction("Update Izin Role", `Mengubah izin akses untuk peran ${roleName}`);
+  };
+
+  const toggleReconciliation = (txId) => {
+    setReconciledIds(prev => {
+      const exists = prev.includes(txId);
+      if (exists) {
+        return prev.filter(id => id !== txId);
+      } else {
+        return [...prev, txId];
+      }
+    });
   };
 
   const changeRole = (roleName) => {
@@ -189,10 +224,6 @@ export const AppProvider = ({ children }) => {
 
   // Helper: Update account balances in Chart of Accounts (COA)
   const updateAccountBalance = (accountCode, amount, entryType) => {
-    // entryType is 'debit' or 'credit'
-    // Depending on standard account type, adding debit/credit increases or decreases balance
-    // 1xxx (Aset) & 5xxx/6xxx (Beban): Debit increases (+), Credit decreases (-)
-    // 2xxx (Kewajiban) & 3xxx (Ekuitas) & 4xxx (Pendapatan): Credit increases (+), Debit decreases (-)
     setAccounts(prevAccounts => {
       return prevAccounts.map(acc => {
         if (acc.code === accountCode) {
@@ -212,7 +243,7 @@ export const AppProvider = ({ children }) => {
   };
 
   // 1. Add Journal Entry (Double-Entry Bookkeeping)
-  const addJournalEntry = (date, reference, description, details) => {
+  const addJournalEntry = (date, reference, description, details, isAdjusting = false) => {
     const totalDebit = details.reduce((sum, item) => sum + Number(item.debit), 0);
     const totalCredit = details.reduce((sum, item) => sum + Number(item.credit), 0);
 
@@ -225,6 +256,7 @@ export const AppProvider = ({ children }) => {
       date,
       reference,
       description,
+      isAdjusting,
       status: "Posted",
       details: details.map(d => ({
         accountCode: d.accountCode,
@@ -978,6 +1010,23 @@ export const AppProvider = ({ children }) => {
     });
   };
 
+  const editUser = ({ id, name, role }) => {
+    setUsers(prev => {
+      const updated = prev.map(u => {
+        if (u.id === id) {
+          return { ...u, name, role };
+        }
+        return u;
+      });
+      const changedUser = updated.find(u => u.id === id);
+      if (changedUser && activeUser.id === id) {
+        setActiveUser(changedUser);
+      }
+      return updated;
+    });
+    logAction("Edit Pengguna", `Mengubah nama/peran user ID ${id}`);
+  };
+
   // Reset demo data to defaults
   const resetDemoData = () => {
     localStorage.removeItem("erp_users");
@@ -994,6 +1043,8 @@ export const AppProvider = ({ children }) => {
     localStorage.removeItem("erp_production_orders");
     localStorage.removeItem("erp_tax_transactions");
     localStorage.removeItem("erp_activity_logs");
+    localStorage.removeItem("erp_menu_by_role");
+    localStorage.removeItem("erp_reconciled_ids");
     
     setUsers(initialUsers);
     setActiveUser(initialUsers[0]);
@@ -1009,6 +1060,14 @@ export const AppProvider = ({ children }) => {
     setProductionOrders(initialProductionOrders);
     setTaxTransactions(initialTaxTransactions);
     setActivityLogs(initialActivityLogs);
+    setMenuByRole({
+      "Admin": ["dashboard", "akuntansi", "kasbank", "penjualan", "pembelian", "persediaan", "produksi", "pajak", "laporan", "hakakses"],
+      "Staf Keuangan": ["dashboard", "akuntansi", "kasbank", "penjualan", "pembelian", "pajak", "laporan"],
+      "Staf Gudang": ["dashboard", "persediaan"],
+      "Staf Produksi": ["dashboard", "produksi", "persediaan"],
+      "Manajemen": ["dashboard", "laporan"]
+    });
+    setReconciledIds([]);
     setCurrentTab("dashboard");
     logAction("Reset Sistem", "Seluruh data transaksi dan stok di-reset ke saldo awal");
   };
@@ -1035,6 +1094,8 @@ export const AppProvider = ({ children }) => {
         
         // Allowed tabs according to active user role
         allowedTabs: menuByRole[activeUser.role] || ["dashboard"],
+        menuByRole,
+        reconciledIds,
         
         // Setters & Actions
         setCurrentTab,
@@ -1052,6 +1113,9 @@ export const AppProvider = ({ children }) => {
         addTaxPayment,
         addUser,
         toggleUserStatus,
+        editUser,
+        updateRolePermissions,
+        toggleReconciliation,
         resetDemoData,
         logAction
       }}

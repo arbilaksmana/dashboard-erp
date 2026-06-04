@@ -1,7 +1,8 @@
 import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
-import { Plus, Search, AlertTriangle, ArrowDown, ArrowUp, Sparkles } from "lucide-react";
+import { Plus, Search, AlertTriangle, ArrowDown, ArrowUp, Sparkles, BarChart2, Check } from "lucide-react";
 import Modal from "../components/Modal";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 
 export default function Persediaan() {
   const {
@@ -66,6 +67,23 @@ export default function Persediaan() {
   const totalItemsCount = items.length;
   const criticalItemsCount = items.filter(i => i.stock <= i.minStock).length;
 
+  const getStockMovementChartData = () => {
+    const grouped = {};
+    inventoryTransactions.forEach(tx => {
+      const dateStr = tx.date;
+      if (!grouped[dateStr]) {
+        grouped[dateStr] = { date: dateStr, Masuk: 0, Keluar: 0 };
+      }
+      if (tx.type === "Masuk") {
+        grouped[dateStr].Masuk += tx.qty;
+      } else {
+        grouped[dateStr].Keluar += tx.qty;
+      }
+    });
+    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+  };
+  const stockMovementChartData = getStockMovementChartData();
+
   return (
     <div className="space-y-6 animate-fade-in p-6 min-h-screen">
       
@@ -122,7 +140,7 @@ export default function Persediaan() {
       {/* Sub-tabs header */}
       <div className="flex border-b border-slate-200 dark:border-slate-800 justify-between items-end flex-wrap gap-4">
         <div className="flex gap-2">
-          {["stok", "kartu"].map(tab => (
+          {["stok", "kartu", "report"].map(tab => (
             <button
               key={tab}
               onClick={() => setSubTab(tab)}
@@ -132,7 +150,9 @@ export default function Persediaan() {
                   : "border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"
               }`}
             >
-              {tab === "stok" ? "Posisi Persediaan Stok" : "Kartu Stok (Log Mutasi)"}
+              {tab === "stok" && "Posisi Persediaan Stok"}
+              {tab === "kartu" && "Kartu Stok (Log Mutasi)"}
+              {tab === "report" && "Laporan Persediaan"}
             </button>
           ))}
         </div>
@@ -278,6 +298,99 @@ export default function Persediaan() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Laporan Persediaan Tab */}
+      {subTab === "report" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Valuations by category */}
+            <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-4">
+              <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider font-heading">Valuasi per Kategori Barang</h4>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">Bahan Baku (Bahan Dasar Produksi)</span>
+                  <span className="font-bold text-slate-800 dark:text-white">
+                    Rp {items.filter(i => i.category === "Bahan Baku").reduce((sum, i) => sum + (i.stock * i.cost), 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">Barang Jadi (Produk Siap Jual)</span>
+                  <span className="font-bold text-slate-800 dark:text-white">
+                    Rp {items.filter(i => i.category === "Barang Jadi").reduce((sum, i) => sum + (i.stock * i.cost), 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex justify-between items-center text-xs font-bold">
+                  <span className="text-slate-800 dark:text-white">Total Nilai Persediaan</span>
+                  <span className="text-blue-600 dark:text-blue-400">Rp {totalValue.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Critical stock items detail */}
+            <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-3">
+              <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider font-heading">
+                Status Limit & Peringatan Stok
+              </h4>
+              {criticalItemsCount === 0 ? (
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                  <Check className="w-4 h-4" /> Seluruh stok barang berada di tingkat aman.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1">
+                    <AlertTriangle className="w-4 h-4 animate-pulse" /> Terdapat {criticalItemsCount} item di bawah batas stok minimum!
+                  </div>
+                  <div className="max-h-24 overflow-y-auto space-y-1">
+                    {items.filter(i => i.stock <= i.minStock).map(i => (
+                      <div key={i.id} className="text-[11px] flex justify-between text-slate-500 dark:text-slate-400 bg-rose-50/50 dark:bg-rose-950/10 p-1.5 rounded">
+                        <span>[{i.code}] {i.name.toUpperCase()}</span>
+                        <span className="font-bold text-rose-600 dark:text-rose-400">Stok: {i.stock} / Min: {i.minStock} {i.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Stock Movement Trend Chart */}
+          <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-4">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-heading">
+                Analisis Volume Aliran Mutasi Stok (Masuk vs Keluar)
+              </h4>
+              <p className="text-[10px] text-slate-400 dark:text-slate-555">Kuantitas item mutasi masuk dan keluar dari gudang</p>
+            </div>
+            <div className="h-64 w-full">
+              {stockMovementChartData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                  Belum ada log transaksi mutasi stok tercatat.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stockMovementChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.1} />
+                    <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0b0f19",
+                        borderColor: "#1e293b",
+                        borderRadius: "12px",
+                        color: "#fff",
+                        fontSize: "11px"
+                      }}
+                    />
+                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '10px' }} />
+                    <Bar dataKey="Masuk" fill="#10b981" radius={[4, 4, 0, 0]} name="Stok Masuk" />
+                    <Bar dataKey="Keluar" fill="#f43f5e" radius={[4, 4, 0, 0]} name="Stok Keluar" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </div>
       )}

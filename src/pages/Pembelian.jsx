@@ -1,7 +1,8 @@
 import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
-import { Plus, Check, CreditCard, AlertCircle, Trash } from "lucide-react";
+import { Plus, Check, CreditCard, AlertCircle, Trash, BarChart2 } from "lucide-react";
 import Modal from "../components/Modal";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 export default function Pembelian() {
   const {
@@ -133,6 +134,36 @@ export default function Pembelian() {
     .filter(i => i.status !== "Lunas")
     .reduce((sum, i) => sum + (i.amount - (i.paidAmount || 0)), 0);
 
+  const getMonthlyPurchaseChartData = () => {
+    const grouped = {};
+    purchaseInvoices.forEach(inv => {
+      const dateStr = inv.date;
+      if (!grouped[dateStr]) {
+        grouped[dateStr] = { date: dateStr, Pembelian: 0 };
+      }
+      grouped[dateStr].Pembelian += inv.amount;
+    });
+    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+  };
+  const monthlyPurchaseChartData = getMonthlyPurchaseChartData();
+
+  const getItemPurchaseReportData = () => {
+    const report = {};
+    purchaseInvoices.forEach(inv => {
+      inv.items.forEach(it => {
+        const itemObj = items.find(i => i.id === it.itemId);
+        const name = itemObj ? itemObj.name : it.itemId;
+        if (!report[it.itemId]) {
+          report[it.itemId] = { id: it.itemId, name, qtyBought: 0, cost: 0 };
+        }
+        report[it.itemId].qtyBought += it.qty;
+        report[it.itemId].cost += it.qty * it.price;
+      });
+    });
+    return Object.values(report);
+  };
+  const itemPurchaseReportList = getItemPurchaseReportData();
+
   const subtotalSum = calculateSubtotal();
   const taxSum = Math.round(subtotalSum * taxRate);
   const totalSum = subtotalSum + taxSum;
@@ -143,7 +174,7 @@ export default function Pembelian() {
       {/* Sub-tabs header */}
       <div className="flex border-b border-slate-200 dark:border-slate-800 justify-between items-end flex-wrap gap-4">
         <div className="flex gap-2">
-          {["invoices", "pemasok"].map(tab => (
+          {["invoices", "pemasok", "report"].map(tab => (
             <button
               key={tab}
               onClick={() => setSubTab(tab)}
@@ -153,7 +184,9 @@ export default function Pembelian() {
                   : "border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"
               }`}
             >
-              {tab === "invoices" ? "Tagihan Pembelian (PO)" : "Daftar Pemasok (Supplier)"}
+              {tab === "invoices" && "Tagihan Pembelian (PO)"}
+              {tab === "pemasok" && "Daftar Pemasok (Supplier)"}
+              {tab === "report" && "Laporan Pembelian"}
             </button>
           ))}
         </div>
@@ -302,6 +335,124 @@ export default function Pembelian() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Laporan Pembelian Tab */}
+      {subTab === "report" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">TOTAL PEMBELIAN</span>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white font-heading">
+                  Rp {purchaseInvoices.reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                </h3>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                <BarChart2 className="w-5 h-5" />
+              </div>
+            </div>
+            
+            <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">PEMBELIAN TUNAI (CASH)</span>
+                <h3 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-heading">
+                  Rp {purchaseInvoices.filter(i => i.payMethod === "Cash").reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                </h3>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <Check className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-heading">PEMBELIAN KREDIT (AP)</span>
+                <h3 className="text-xl font-bold text-orange-600 dark:text-orange-400 font-heading">
+                  Rp {purchaseInvoices.filter(i => i.payMethod === "Credit").reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                </h3>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+
+          {/* Purchase / AP trend chart */}
+          <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-4">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-heading">
+                Tren Biaya Pembelian Bulanan/Harian
+              </h4>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">Nilai total PO tagihan pembelian bahan baku</p>
+            </div>
+            <div className="h-64 w-full">
+              {monthlyPurchaseChartData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                  Belum ada data pembelian bahan baku tercatat.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyPurchaseChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.1} />
+                    <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0b0f19",
+                        borderColor: "#1e293b",
+                        borderRadius: "12px",
+                        color: "#fff",
+                        fontSize: "11px"
+                      }}
+                    />
+                    <Bar dataKey="Pembelian" fill="#ec4899" radius={[4, 4, 0, 0]} name="Nilai Pembelian" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          {/* Purchases by Item Table */}
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-xs font-bold text-slate-800 dark:text-white uppercase font-heading">Statistik Pembelian per Bahan Baku</h4>
+              <p className="text-[10px] text-slate-400">Rangkuman kuantitas dibeli dan pengeluaran masing-masing bahan baku</p>
+            </div>
+            <div className="fogo-card overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+              <div className="overflow-x-auto">
+                <table className="fogo-table">
+                  <thead>
+                    <tr>
+                      <th className="text-left">Kode Item</th>
+                      <th className="text-left">Nama Bahan Baku</th>
+                      <th className="text-center w-36">Total Dibeli</th>
+                      <th className="text-right w-52">Total Nilai Pembelian (Rp)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                    {itemPurchaseReportList.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+                          Belum ada item dibeli.
+                        </td>
+                      </tr>
+                    ) : (
+                      itemPurchaseReportList.map((row, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                          <td className="px-4 py-3 text-xs font-mono font-bold text-blue-600 dark:text-blue-400">{row.id}</td>
+                          <td className="px-4 py-3 text-xs font-bold text-slate-800 dark:text-white uppercase">{row.name}</td>
+                          <td className="px-4 py-3 text-center text-xs font-semibold">{row.qtyBought} unit</td>
+                          <td className="px-4 py-3 text-right text-xs font-bold text-slate-900 dark:text-white">Rp {row.cost.toLocaleString()}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       )}

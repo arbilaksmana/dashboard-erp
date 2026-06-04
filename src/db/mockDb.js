@@ -180,9 +180,12 @@ export const initialProductionOrders = [
 ];
 
 export const initialTaxTransactions = [
-  { id: "tx-t1", date: "2026-05-18", taxType: "PPN Keluaran", invoiceRef: "INV-2026-001", baseAmount: 10000000, taxRate: 0.10, taxAmount: 1000000, status: "Belum Bayar" },
-  { id: "tx-t2", date: "2026-05-20", taxType: "PPN Masukan", invoiceRef: "PINV-2026-001", baseAmount: 5200000, taxRate: 0.10, taxAmount: 520000, status: "Sudah Dikreditkan" },
-  { id: "tx-t3", date: "2026-05-28", taxType: "PPN Keluaran", invoiceRef: "INV-2026-002", baseAmount: 11700000, taxRate: 0.10, taxAmount: 1176000, status: "Belum Bayar" }
+  { id: "tx-t1", date: "2026-05-18", taxType: "PPN Keluaran", invoiceRef: "INV-2026-001", baseAmount: 10000000, taxRate: 0.11, taxAmount: 1100000, status: "Belum Bayar" },
+  { id: "tx-t2", date: "2026-05-20", taxType: "PPN Masukan", invoiceRef: "PINV-2026-001", baseAmount: 5200000, taxRate: 0.11, taxAmount: 572000, status: "Sudah Dikreditkan" },
+  { id: "tx-t3", date: "2026-05-28", taxType: "PPN Keluaran", invoiceRef: "INV-2026-002", baseAmount: 11700000, taxRate: 0.11, taxAmount: 1287000, status: "Belum Bayar" },
+  { id: "tx-t4", date: "2026-05-31", taxType: "PPh 21", invoiceRef: "GAJI-2026-05", baseAmount: 9500000, taxRate: 0.05, taxAmount: 475000, status: "Belum Bayar" },
+  { id: "tx-t5", date: "2026-06-02", taxType: "PPh 23", invoiceRef: "WO-2026-002", baseAmount: 5000000, taxRate: 0.02, taxAmount: 100000, status: "Belum Bayar" },
+  { id: "tx-t6", date: "2026-06-03", taxType: "PPh Final", invoiceRef: "OMSET-2026-05", baseAmount: 45000000, taxRate: 0.005, taxAmount: 225000, status: "Belum Bayar" }
 ];
 
 export const initialActivityLogs = [

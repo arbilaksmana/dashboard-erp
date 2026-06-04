@@ -1,13 +1,16 @@
 import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
-import { Plus, Check, ArrowDownLeft, ArrowUpRight, RefreshCw, Sparkles } from "lucide-react";
+import { Plus, Check, ArrowDownLeft, ArrowUpRight, RefreshCw, Sparkles, Filter } from "lucide-react";
 import Modal from "../components/Modal";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 export default function KasBank() {
   const {
     accounts,
     cashBankTransactions,
-    addCashTransaction
+    addCashTransaction,
+    reconciledIds,
+    toggleReconciliation
   } = useContext(AppContext);
 
   const [subTab, setSubTab] = useState("mutasi");
@@ -24,7 +27,8 @@ export default function KasBank() {
   const [reference, setReference] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [reconciledItems, setReconciledItems] = useState({});
+  const [filterMonth, setFilterMonth] = useState("all");
+  const [filterYear, setFilterYear] = useState("all");
 
   const cashAccounts = accounts.filter(acc => ["1101", "1102"].includes(acc.code));
 
@@ -69,15 +73,35 @@ export default function KasBank() {
     setIsModalOpen(false);
   };
 
-  const handleToggleReconciled = (id) => {
-    setReconciledItems(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
+  const filteredTransactions = cashBankTransactions.filter(tx => {
+    const txDate = new Date(tx.date);
+    const txMonth = String(txDate.getMonth() + 1).padStart(2, "0");
+    const txYear = String(txDate.getFullYear());
+    
+    const matchMonth = filterMonth === "all" || txMonth === filterMonth;
+    const matchYear = filterYear === "all" || txYear === filterYear;
+    return matchMonth && matchYear;
+  });
 
-  const totalIn = cashBankTransactions.filter(t => t.type === "Masuk").reduce((sum, t) => sum + t.amount, 0);
-  const totalOut = cashBankTransactions.filter(t => t.type === "Keluar").reduce((sum, t) => sum + t.amount, 0);
+  const totalIn = filteredTransactions.filter(t => t.type === "Masuk").reduce((sum, t) => sum + t.amount, 0);
+  const totalOut = filteredTransactions.filter(t => t.type === "Keluar").reduce((sum, t) => sum + t.amount, 0);
+
+  const getChartData = () => {
+    const grouped = {};
+    [...filteredTransactions].reverse().forEach(tx => {
+      const dateStr = tx.date;
+      if (!grouped[dateStr]) {
+        grouped[dateStr] = { date: dateStr, Masuk: 0, Keluar: 0 };
+      }
+      if (tx.type === "Masuk") {
+        grouped[dateStr].Masuk += tx.amount;
+      } else if (tx.type === "Keluar") {
+        grouped[dateStr].Keluar += tx.amount;
+      }
+    });
+    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+  };
+  const chartData = getChartData();
 
   return (
     <div className="space-y-6 animate-fade-in p-6 min-h-screen">
@@ -178,60 +202,141 @@ export default function KasBank() {
 
       {/* Mutasi Tab */}
       {subTab === "mutasi" && (
-        <div className="fogo-card overflow-hidden bg-white dark:bg-slate-900">
-          <div className="overflow-x-auto">
-            <table className="fogo-table">
-              <thead>
-                <tr>
-                  <th className="text-left">Tanggal</th>
-                  <th className="text-left">Referensi</th>
-                  <th className="text-left">Akun Kas/Bank</th>
-                  <th className="text-left">Kategori & Keterangan</th>
-                  <th className="text-center">Tipe</th>
-                  <th className="text-right">Nominal (Rp)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                {cashBankTransactions.map((tx) => {
-                  const accName = accounts.find(a => a.code === tx.accountCode)?.name || tx.accountCode;
-                  const toAccName = tx.toAccountCode ? (accounts.find(a => a.code === tx.toAccountCode)?.name || tx.toAccountCode) : "";
-                  
-                  return (
-                    <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="px-4 py-3 text-xs">{tx.date}</td>
-                      <td className="px-4 py-3 text-xs font-bold text-blue-600 dark:text-blue-400">{tx.reference}</td>
-                      <td className="px-4 py-3 text-xs font-semibold text-slate-800 dark:text-white uppercase">
-                        {tx.type === "Transfer" ? `${accName} ➔ ${toAccName}` : accName}
-                      </td>
-                      <td className="px-4 py-3 text-xs">
-                        <div className="font-bold text-slate-800 dark:text-white uppercase">{tx.category}</div>
-                        <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{tx.description}</div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+        <div className="space-y-6">
+          {/* Cash Flow Chart */}
+          <div className="fogo-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 space-y-4">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 font-heading">
+                Tren Aliran Kas Masuk vs Kas Keluar
+              </h4>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">Visualisasi harian/periode dari mutasi kas</p>
+            </div>
+            <div className="h-64 w-full">
+              {chartData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                  Tidak ada data transaksi kas pada periode ini.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorMasuk" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorKeluar" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.1} />
+                    <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#0b0f19",
+                        borderColor: "#1e293b",
+                        borderRadius: "12px",
+                        color: "#fff",
+                        fontSize: "11px"
+                      }}
+                    />
+                    <Area type="monotone" dataKey="Masuk" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorMasuk)" name="Kas Masuk" />
+                    <Area type="monotone" dataKey="Keluar" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorKeluar)" name="Kas Keluar" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          {/* Period Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-850">
+            <div>
+              <h4 className="text-xs font-bold text-slate-850 dark:text-white uppercase font-heading">Filter Mutasi Transaksi</h4>
+              <p className="text-[10px] text-slate-400">Saring transaksi berdasarkan periode bulan/tahun</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Bulan:</span>
+                <select
+                  value={filterMonth}
+                  onChange={(e) => setFilterMonth(e.target.value)}
+                  className="fogo-input px-3 py-1.5 text-xs text-[#0f172a]"
+                >
+                  <option value="all">Semua Bulan</option>
+                  <option value="05">Mei</option>
+                  <option value="06">Juni</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Tahun:</span>
+                <select
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  className="fogo-input px-3 py-1.5 text-xs text-[#0f172a]"
+                >
+                  <option value="all">Semua Tahun</option>
+                  <option value="2026">2026</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="fogo-card overflow-hidden bg-white dark:bg-slate-900">
+            <div className="overflow-x-auto">
+              <table className="fogo-table">
+                <thead>
+                  <tr>
+                    <th className="text-left">Tanggal</th>
+                    <th className="text-left">Referensi</th>
+                    <th className="text-left">Akun Kas/Bank</th>
+                    <th className="text-left">Kategori & Keterangan</th>
+                    <th className="text-center">Tipe</th>
+                    <th className="text-right">Nominal (Rp)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                  {filteredTransactions.map((tx) => {
+                    const accName = accounts.find(a => a.code === tx.accountCode)?.name || tx.accountCode;
+                    const toAccName = tx.toAccountCode ? (accounts.find(a => a.code === tx.toAccountCode)?.name || tx.toAccountCode) : "";
+                    
+                    return (
+                      <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="px-4 py-3 text-xs">{tx.date}</td>
+                        <td className="px-4 py-3 text-xs font-bold text-blue-600 dark:text-blue-400">{tx.reference}</td>
+                        <td className="px-4 py-3 text-xs font-semibold text-slate-800 dark:text-white uppercase">
+                          {tx.type === "Transfer" ? `${accName} ➔ ${toAccName}` : accName}
+                        </td>
+                        <td className="px-4 py-3 text-xs">
+                          <div className="font-bold text-slate-800 dark:text-white uppercase">{tx.category}</div>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{tx.description}</div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            tx.type === "Masuk"
+                              ? "bg-emerald-55 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                              : tx.type === "Keluar"
+                              ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                          }`}>
+                            {tx.type}
+                          </span>
+                        </td>
+                        <td className={`px-4 py-3 text-right text-xs font-bold ${
                           tx.type === "Masuk"
-                            ? "bg-emerald-55 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                            ? "text-emerald-600 dark:text-emerald-400"
                             : tx.type === "Keluar"
-                            ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
-                            : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                            ? "text-rose-600 dark:text-rose-400"
+                            : "text-slate-700 dark:text-slate-350"
                         }`}>
-                          {tx.type}
-                        </span>
-                      </td>
-                      <td className={`px-4 py-3 text-right text-xs font-bold ${
-                        tx.type === "Masuk"
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : tx.type === "Keluar"
-                          ? "text-rose-600 dark:text-rose-400"
-                          : "text-slate-700 dark:text-slate-350"
-                      }`}>
-                        Rp {tx.amount.toLocaleString()}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          Rp {tx.amount.toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -264,8 +369,8 @@ export default function KasBank() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                  {cashBankTransactions.map((tx) => {
-                    const isReconciled = reconciledItems[tx.id] || false;
+                  {filteredTransactions.map((tx) => {
+                    const isReconciled = reconciledIds.includes(tx.id);
                     return (
                       <tr
                         key={tx.id}
@@ -277,7 +382,7 @@ export default function KasBank() {
                           <input
                             type="checkbox"
                             checked={isReconciled}
-                            onChange={() => handleToggleReconciled(tx.id)}
+                            onChange={() => toggleReconciliation(tx.id)}
                             className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer"
                           />
                         </td>

@@ -8,7 +8,10 @@ export default function HakAkses() {
     users,
     activityLogs,
     addUser,
-    toggleUserStatus
+    toggleUserStatus,
+    editUser,
+    menuByRole,
+    updateRolePermissions
   } = useContext(AppContext);
 
   const [subTab, setSubTab] = useState("users");
@@ -20,6 +23,31 @@ export default function HakAkses() {
   const [name, setName] = useState("");
   const [role, setRole] = useState("Staf Keuangan");
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Form State: Edit User
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editUserId, setEditUserId] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editErrorMsg, setEditErrorMsg] = useState("");
+
+  const handleOpenEditModal = (u) => {
+    setEditUserId(u.id);
+    setEditName(u.name);
+    setEditRole(u.role);
+    setEditErrorMsg("");
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEditUser = (e) => {
+    e.preventDefault();
+    if (!editName) {
+      setEditErrorMsg("Nama lengkap wajib diisi!");
+      return;
+    }
+    editUser({ id: editUserId, name: editName, role: editRole });
+    setIsEditModalOpen(false);
+  };
 
   const handleSubmitUser = (e) => {
     e.preventDefault();
@@ -39,13 +67,23 @@ export default function HakAkses() {
     setIsModalOpen(false);
   };
 
-  const permissionsMatrix = [
-    { roleName: "Admin", access: { dashboard: true, akuntansi: true, kasbank: true, penjualan: true, pembelian: true, persediaan: true, produksi: true, pajak: true, laporan: true, hakakses: true } },
-    { roleName: "Staf Keuangan", access: { dashboard: true, akuntansi: true, kasbank: true, penjualan: true, pembelian: true, persediaan: false, produksi: false, pajak: true, laporan: true, hakakses: false } },
-    { roleName: "Staf Gudang", access: { dashboard: true, akuntansi: false, kasbank: false, penjualan: false, pembelian: false, persediaan: true, produksi: false, pajak: false, laporan: false, hakakses: false } },
-    { roleName: "Staf Produksi", access: { dashboard: true, akuntansi: false, kasbank: false, penjualan: false, pembelian: false, persediaan: true, produksi: true, pajak: false, laporan: false, hakakses: false } },
-    { roleName: "Manajemen", access: { dashboard: true, akuntansi: false, kasbank: false, penjualan: false, pembelian: false, persediaan: false, produksi: false, pajak: false, laporan: true, hakakses: false } }
-  ];
+  const rolesList = ["Admin", "Staf Keuangan", "Staf Gudang", "Staf Produksi", "Manajemen"];
+
+  const handleTogglePermission = (roleName, moduleKey) => {
+    if (roleName === "Admin") {
+      // Prevents locking out admin accidentally
+      return;
+    }
+    const currentTabs = menuByRole[roleName] || [];
+    const isAllowed = currentTabs.includes(moduleKey);
+    let newTabs;
+    if (isAllowed) {
+      newTabs = currentTabs.filter(t => t !== moduleKey);
+    } else {
+      newTabs = [...currentTabs, moduleKey];
+    }
+    updateRolePermissions(roleName, newTabs);
+  };
 
   const modulesList = [
     { key: "dashboard", label: "DASHBOARD" },
@@ -116,7 +154,7 @@ export default function HakAkses() {
                   <th className="text-left">Nama Lengkap Pengguna</th>
                   <th className="text-left w-44">Peran Wewenang</th>
                   <th className="text-center w-28">Status</th>
-                  <th className="text-center w-36">Kontrol Akun</th>
+                  <th className="text-center w-52">Aksi & Kontrol</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -140,24 +178,24 @@ export default function HakAkses() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => toggleUserStatus(u.id)}
-                        className={`p-1.5 border transition-all cursor-pointer inline-flex items-center gap-1 text-[10px] font-bold uppercase rounded-lg ${
-                          u.active
-                            ? "border-orange-200 dark:border-orange-900/50 bg-orange-50/50 hover:bg-orange-600 text-orange-655 hover:text-white"
-                            : "border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 hover:bg-emerald-600 text-emerald-600 hover:text-white"
-                        }`}
-                      >
-                        {u.active ? (
-                          <>
-                            <ToggleRight className="w-4 h-4" /> Nonaktifkan
-                          </>
-                        ) : (
-                          <>
-                            <ToggleLeft className="w-4 h-4" /> Aktifkan
-                          </>
-                        )}
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleOpenEditModal(u)}
+                          className="px-3 py-1.5 bg-blue-50/50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 dark:border-blue-900/50 transition-all cursor-pointer text-[10px] font-bold uppercase rounded-lg"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => toggleUserStatus(u.id)}
+                          className={`px-3 py-1.5 border transition-all cursor-pointer inline-flex items-center gap-1 text-[10px] font-bold uppercase rounded-lg ${
+                            u.active
+                              ? "border-orange-200 dark:border-orange-900/50 bg-orange-50/50 hover:bg-orange-655 text-orange-655 hover:text-white"
+                              : "border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/50 hover:bg-emerald-600 text-emerald-600 hover:text-white"
+                          }`}
+                        >
+                          {u.active ? "Nonaktifkan" : "Aktifkan"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -172,7 +210,7 @@ export default function HakAkses() {
         <div className="space-y-4">
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider font-heading">Matriks Hak Akses Per Modul</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Konfigurasi hak akses tampilan menu sidebar untuk setiap jabatan peran</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Konfigurasi hak akses tampilan menu sidebar untuk setiap jabatan peran (klik untuk mengubah)</p>
           </div>
 
           <div className="fogo-card overflow-hidden bg-white dark:bg-slate-900">
@@ -187,18 +225,26 @@ export default function HakAkses() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                  {permissionsMatrix.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                      <td className="px-4 py-3 text-xs font-bold text-slate-850 dark:text-white uppercase bg-slate-50/30 dark:bg-slate-950/10">{row.roleName}</td>
+                  {rolesList.map((roleName) => (
+                    <tr key={roleName} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                      <td className="px-4 py-3 text-xs font-bold text-slate-855 dark:text-white uppercase bg-slate-50/30 dark:bg-slate-950/10">{roleName}</td>
                       {modulesList.map(mod => {
-                        const hasAccess = row.access[mod.key];
+                        const currentTabs = menuByRole[roleName] || [];
+                        const hasAccess = currentTabs.includes(mod.key);
+                        const isAdminLock = roleName === "Admin";
                         return (
                           <td key={mod.key} className="px-3 py-3 text-center">
-                            {hasAccess ? (
-                              <Check className="w-4 h-4 text-blue-650 dark:text-blue-400 mx-auto" />
-                            ) : (
-                              <span className="text-slate-300 dark:text-slate-700 font-bold">-</span>
-                            )}
+                            <button
+                              disabled={isAdminLock}
+                              onClick={() => handleTogglePermission(roleName, mod.key)}
+                              className={`p-1 rounded-lg border transition-all mx-auto flex items-center justify-center w-6 h-6 ${
+                                hasAccess
+                                  ? "bg-blue-50/70 dark:bg-blue-955/20 border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 font-bold"
+                                  : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-300 dark:text-slate-700"
+                              } ${isAdminLock ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-blue-400 hover:text-blue-500"}`}
+                            >
+                              <Check className={`w-3.5 h-3.5 ${hasAccess ? "opacity-100" : "opacity-0"}`} />
+                            </button>
                           </td>
                         );
                       })}
@@ -327,6 +373,68 @@ export default function HakAkses() {
               className="fogo-btn-primary px-5 py-2 text-xs cursor-pointer"
             >
               Buat Akun
+            </button>
+          </div>
+
+        </form>
+      </Modal>
+
+      {/* Modal: Edit User */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="UBAH DETAIL PENGGUNA SISTEM"
+        size="md"
+      >
+        <form onSubmit={handleSaveEditUser} className="space-y-4 text-slate-700 dark:text-slate-300">
+          
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-heading">Nama Lengkap Pengguna</label>
+            <input
+              type="text"
+              required
+              placeholder="Contoh: Budi Santoso, ST"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="fogo-input w-full px-3 py-2 text-xs font-sans"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider font-heading">Peran Jabatan (Role)</label>
+            <select
+              required
+              value={editRole}
+              onChange={(e) => setEditRole(e.target.value)}
+              className="fogo-input w-full px-3 py-2 text-xs font-sans"
+            >
+              <option value="Staf Keuangan">STAF KEUANGAN</option>
+              <option value="Staf Gudang">STAF GUDANG</option>
+              <option value="Staf Produksi">STAF PRODUKSI</option>
+              <option value="Manajemen">MANAJEMEN</option>
+              <option value="Admin">ADMINISTRATOR</option>
+            </select>
+          </div>
+
+          {editErrorMsg && (
+            <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 rounded-xl text-xs text-red-655 dark:text-red-400">
+              {editErrorMsg}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              className="fogo-btn-secondary px-4 py-2 text-xs cursor-pointer"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="fogo-btn-primary px-5 py-2 text-xs cursor-pointer"
+            >
+              Simpan Perubahan
             </button>
           </div>
 

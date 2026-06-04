@@ -221,3 +221,28 @@ html, body {
 .dark .fogo-table td {
   border-bottom-color: #131722;
 }
+
+/* Print Overrides */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area, #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background-color: white !important;
+    color: black !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  #print-area span, #print-area h2, #print-area h3, #print-area h4, #print-area div, #print-area p {
+    color: black !important;
+  }
+}
