@@ -246,15 +246,15 @@ export default function Pajak() {
                     return (
                       <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                         <td className="px-4 py-3 text-xs">{tx.date}</td>
-                        <td className="px-4 py-3 text-xs font-bold text-slate-850 dark:text-white uppercase">{tx.taxType}</td>
-                        <td className="px-4 py-3 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase">{tx.invoiceRef}</td>
-                        <td className="px-4 py-3 text-right text-xs">Rp {tx.baseAmount.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right text-xs font-bold text-slate-900 dark:text-white">Rp {tx.taxAmount.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-xs font-bold text-slate-855 dark:text-white uppercase whitespace-nowrap">{tx.taxType}</td>
+                        <td className="px-4 py-3 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase whitespace-nowrap">{tx.invoiceRef}</td>
+                        <td className="px-4 py-3 text-right text-xs whitespace-nowrap">Rp {tx.baseAmount.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right text-xs font-bold text-slate-900 dark:text-white whitespace-nowrap">Rp {tx.taxAmount.toLocaleString()}</td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
                             tx.status === "Sudah Dibayar" || tx.status === "Sudah Dikreditkan"
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 animate-pulse"
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-955/40 dark:text-emerald-400"
+                              : "bg-rose-50 text-rose-700 dark:bg-rose-955/40 dark:text-rose-400 animate-pulse"
                           }`}>
                             {tx.status}
                           </span>

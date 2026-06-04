@@ -371,10 +371,16 @@ export default function Persediaan() {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stockMovementChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart data={stockMovementChartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.1} />
                     <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis 
+                      tick={{ fill: '#94a3b8', fontSize: 10 }} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      width={50}
+                      tickFormatter={(val) => val.toLocaleString('id-ID')}
+                    />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#0b0f19",

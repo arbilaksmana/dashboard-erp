@@ -164,12 +164,12 @@ export default function HakAkses() {
                     <td className="px-4 py-3 text-xs font-bold text-slate-800 dark:text-white uppercase">{u.username}</td>
                     <td className="px-4 py-3 text-xs font-bold text-slate-800 dark:text-white uppercase">{u.name}</td>
                     <td className="px-4 py-3 text-xs">
-                      <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-blue-50 dark:bg-blue-955/40 text-blue-600 dark:text-blue-400">
+                      <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-blue-50 dark:bg-blue-955/40 text-blue-600 dark:text-blue-400 whitespace-nowrap">
                         {u.role}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
                         u.active
                           ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
                           : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-500"
@@ -291,7 +291,7 @@ export default function HakAkses() {
                       <td className="px-4 py-3 text-xs text-slate-400 dark:text-slate-500 font-medium">{log.timestamp}</td>
                       <td className="px-4 py-3 text-xs font-bold text-slate-850 dark:text-white uppercase">{log.username}</td>
                       <td className="px-4 py-3 text-xs">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-955/35 text-blue-700 dark:text-blue-400 font-bold uppercase">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-blue-50 dark:bg-blue-955/35 text-blue-700 dark:text-blue-400 font-bold uppercase whitespace-nowrap">
                           {log.action}
                         </span>
                       </td>

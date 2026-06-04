@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { Plus, Check, CreditCard, AlertCircle, Trash, BarChart2 } from "lucide-react";
 import Modal from "../components/Modal";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 
 export default function Pembelian() {
   const {
@@ -395,10 +395,16 @@ export default function Pembelian() {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyPurchaseChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart data={monthlyPurchaseChartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.1} />
                     <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis 
+                      tick={{ fill: '#94a3b8', fontSize: 10 }} 
+                      axisLine={false} 
+                      tickLine={false} 
+                      width={75}
+                      tickFormatter={(val) => val >= 1000000 ? `${(val / 1000000).toLocaleString('id-ID')}JT` : val.toLocaleString('id-ID')}
+                    />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#0b0f19",
@@ -408,6 +414,7 @@ export default function Pembelian() {
                         fontSize: "11px"
                       }}
                     />
+                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '10px' }} />
                     <Bar dataKey="Pembelian" fill="#ec4899" radius={[4, 4, 0, 0]} name="Nilai Pembelian" />
                   </BarChart>
                 </ResponsiveContainer>

@@ -1,9 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-heading: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   
   --color-brand-blue: #2563eb;
@@ -24,43 +26,33 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Custom Base Styling */
+/* ───────────────────────────────────────────────────────────
+   LIGHT MODE BASE
+   ─────────────────────────────────────────────────────────── */
 html, body {
   font-family: var(--font-sans);
-  background-color: #f5f6fa; /* FOGO Dashboard Light Gray-Blue Background */
-  color: #334155; /* Slate-700 */
+  background-color: #f1f5f9;
+  color: #334155;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbar Customization */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* FOGO Card Panels */
+/* ───────────────────────────────────────────────────────────
+   FOGO CARD PANELS
+   ─────────────────────────────────────────────────────────── */
 .fogo-card {
   background-color: #ffffff;
   border-radius: 20px;
   box-shadow: 0 4px 18px rgba(15, 23, 42, 0.03);
-  border: 1px solid rgba(241, 245, 249, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.8);
   transition: all 0.2s ease-in-out;
 }
-
 .fogo-card:hover {
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
 }
@@ -73,23 +65,42 @@ html, body {
   border: none;
 }
 
-/* FOGO Form Inputs */
+/* ───────────────────────────────────────────────────────────
+   FOGO FORM INPUTS
+   ─────────────────────────────────────────────────────────── */
 .fogo-input {
   background-color: #f8fafc;
-  border: 1.5px solid #f1f5f9;
+  border: 1.5px solid #e2e8f0;
   border-radius: 12px;
   color: #0f172a;
   transition: all 0.15s ease-in-out;
 }
-
 .fogo-input:focus {
   background-color: #ffffff;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
   outline: none;
 }
+select.fogo-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 1.25rem;
+  padding-right: 2.5rem !important;
+}
+.dark select.fogo-input {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+}
+input[type="date"].fogo-input {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+}
 
-/* Buttons */
+/* ───────────────────────────────────────────────────────────
+   BUTTONS
+   ─────────────────────────────────────────────────────────── */
 .fogo-btn-primary {
   background-color: #2563eb;
   color: #ffffff;
@@ -98,13 +109,11 @@ html, body {
   transition: all 0.15s ease-in-out;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
-
 .fogo-btn-primary:hover:not(:disabled) {
   background-color: #1d4ed8;
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
 }
-
 .fogo-btn-primary:active:not(:disabled) {
   transform: translateY(0);
 }
@@ -117,14 +126,15 @@ html, body {
   border-radius: 12px;
   transition: all 0.15s ease-in-out;
 }
-
 .fogo-btn-secondary:hover:not(:disabled) {
   background-color: #f8fafc;
   color: #0f172a;
   border-color: #cbd5e1;
 }
 
-/* Badges */
+/* ───────────────────────────────────────────────────────────
+   BADGES / TREND PILLS
+   ─────────────────────────────────────────────────────────── */
 .trend-pill-green {
   background-color: #e6f9f0;
   color: #059669;
@@ -136,7 +146,6 @@ html, body {
   align-items: center;
   gap: 3px;
 }
-
 .trend-pill-red {
   background-color: #fee2e2;
   color: #dc2626;
@@ -149,12 +158,13 @@ html, body {
   gap: 3px;
 }
 
-/* Table overrides */
+/* ───────────────────────────────────────────────────────────
+   TABLE
+   ─────────────────────────────────────────────────────────── */
 .fogo-table {
   width: 100%;
   border-collapse: collapse;
 }
-
 .fogo-table th {
   color: #64748b;
   font-weight: 600;
@@ -162,67 +172,168 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 12px 16px;
-  border-bottom: 1.5px solid #f1f5f9;
+  border-bottom: 1.5px solid #e2e8f0;
 }
-
 .fogo-table td {
   padding: 14px 16px;
-  border-bottom: 1px solid #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
   font-size: 12px;
+  color: #334155;
 }
 
-/* Dark Mode Overrides (Sleek Slate Theme) */
+/* ═══════════════════════════════════════════════════════════
+   DARK MODE — COMPREHENSIVE OVERRIDES
+   ═══════════════════════════════════════════════════════════ */
 .dark {
   background-color: #0b0f19;
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 .dark html, .dark body {
   background-color: #0b0f19;
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
+/* Scrollbar in dark */
+.dark ::-webkit-scrollbar-thumb { background: #334155; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* --- Cards --- */
 .dark .fogo-card {
   background-color: #131722;
-  border-color: rgba(255, 255, 255, 0.03);
+  border-color: #1e293b;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
-
 .dark .fogo-card:hover {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
+/* --- Inputs --- */
 .dark .fogo-input {
   background-color: #0b0f19;
-  border-color: #222533;
+  border-color: #1e293b;
   color: #f1f5f9;
 }
-
 .dark .fogo-input:focus {
   background-color: #131722;
   border-color: #3b82f6;
 }
 
+/* --- Buttons --- */
 .dark .fogo-btn-secondary {
   background-color: #131722;
   color: #94a3b8;
-  border-color: #222533;
+  border-color: #1e293b;
 }
-
 .dark .fogo-btn-secondary:hover {
-  background-color: #0b0f19;
+  background-color: #1e293b;
   color: #f1f5f9;
 }
 
-.dark .fogo-table th {
-  border-bottom-color: #222533;
+/* --- Badges / Trend Pills --- */
+.dark .trend-pill-green {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+}
+.dark .trend-pill-red {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #f87171;
 }
 
+/* --- Tables --- */
+.dark .fogo-table th {
+  color: #64748b;
+  border-bottom-color: #1e293b;
+}
 .dark .fogo-table td {
   border-bottom-color: #131722;
+  color: #cbd5e1;
 }
 
-/* Print Overrides */
+/* ── Global text color cascade for dark mode ──
+   Catch-all rules that fix text colors for elements
+   using explicit light-mode colors like text-slate-800
+   without dark: counterparts in JSX. These use low
+   specificity so Tailwind dark: utilities still win.  */
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-slate-900 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-brand-navy {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-slate-500 {
+  color: #64748b !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: #0f1525 !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #131722 !important;
+}
+
+.dark .bg-white {
+  background-color: #131722 !important;
+}
+
+.dark .border-slate-100 {
+  border-color: #1e293b !important;
+}
+
+.dark .border-slate-200 {
+  border-color: #1e293b !important;
+}
+
+.dark .border-slate-50 {
+  border-color: #1e293b !important;
+}
+
+/* Select dropdowns */
+.dark select option {
+  background-color: #131722;
+  color: #f1f5f9;
+}
+
+/* Recharts overrides for Light and Dark Modes */
+.recharts-legend-item-text {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+.dark .recharts-legend-item-text {
+  color: #cbd5e1 !important;
+}
+.recharts-text {
+  fill: #64748b !important;
+}
+.dark .recharts-text {
+  fill: #94a3b8 !important;
+}
+.recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05) !important;
+}
+.dark .recharts-default-tooltip {
+  background-color: #0b0f19 !important;
+  border-color: #1e293b !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PRINT OVERRIDES
+   ═══════════════════════════════════════════════════════════ */
 @media print {
   body * {
     visibility: hidden;

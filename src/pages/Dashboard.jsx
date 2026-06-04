@@ -31,7 +31,8 @@ export default function Dashboard() {
     productionOrders,
     items,
     cashBankTransactions,
-    setCurrentTab
+    setCurrentTab,
+    theme
   } = useContext(AppContext);
 
   // 1. Calculate KPI Metrics
@@ -189,22 +190,22 @@ export default function Dashboard() {
           
           <div className="h-48 w-full mt-4 text-[10px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={profitLossData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+              <BarChart data={profitLossData} margin={{ top: 10, right: 5, left: 10, bottom: 0 }}>
                 <XAxis dataKey="name" stroke="#94a3b8" tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(val) => `${val}J`} />
+                <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(val) => `${val}J`} width={50} />
                 <Bar dataKey="Profit" fill="#2563eb" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Loss" fill="#0f172a" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Loss" fill={theme === "dark" ? "#64748b" : "#0f172a"} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="flex justify-center gap-4 text-[10px] font-bold text-slate-500 mt-2">
+          <div className="flex justify-center gap-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-2">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-brand-blue" />
               <span>Profit</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-brand-navy" />
+              <span className={`w-2.5 h-2.5 rounded-full ${theme === "dark" ? "bg-slate-400" : "bg-[#0f172a]"}`} />
               <span>Loss</span>
             </div>
           </div>
@@ -230,7 +231,7 @@ export default function Dashboard() {
 
           <div className="h-60 w-full text-[10px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={salesMonthlyData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+              <AreaChart data={salesMonthlyData} margin={{ top: 10, right: 5, left: 10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15}/>
@@ -241,15 +242,16 @@ export default function Dashboard() {
                     <stop offset="95%" stopColor="#60a5fa" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" opacity={0.1} vertical={false} />
                 <XAxis dataKey="name" stroke="#94a3b8" tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(val) => `${val/1000000}JT`} />
+                <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(val) => `${val/1000000}JT`} width={50} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: "#0f172a", border: "none", borderRadius: "12px", color: "#fff" }}
                   formatter={(val) => [`Rp ${val.toLocaleString()}`]}
                 />
-                <Area type="monotone" dataKey="Revenue" stroke="#2563eb" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
-                <Area type="monotone" dataKey="Expenses" stroke="#60a5fa" strokeWidth={2} fillOpacity={1} fill="url(#colorExp)" />
+                <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '10px' }} />
+                <Area type="monotone" dataKey="Revenue" stroke="#2563eb" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" name="Pendapatan" />
+                <Area type="monotone" dataKey="Expenses" stroke="#60a5fa" strokeWidth={2} fillOpacity={1} fill="url(#colorExp)" name="Pengeluaran" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

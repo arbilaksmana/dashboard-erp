@@ -47,8 +47,8 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen flex text-slate-100 ${
-      theme === "dark" ? "bg-[#0b0f19] text-slate-100" : "bg-gray-50 text-slate-800"
+    <div className={`min-h-screen flex ${
+      theme === "dark" ? "bg-[#0b0f19] text-slate-300" : "bg-slate-100 text-slate-800"
     }`}>
       
       {/* Sidebar navigation */}
