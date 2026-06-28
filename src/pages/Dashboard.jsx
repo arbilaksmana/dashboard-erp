@@ -26,29 +26,20 @@ import {
 
 export default function Dashboard() {
   const {
-    salesInvoices,
     accounts,
     productionOrders,
-    items,
     cashBankTransactions,
     setCurrentTab,
     theme
   } = useContext(AppContext);
 
   // 1. Calculate KPI Metrics
-  const totalSalesVal = salesInvoices.reduce((sum, inv) => sum + inv.amount, 0);
+  const accountTotal = (matcher) => accounts.filter(matcher).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+  const totalSalesVal = accountTotal(acc => acc.code.startsWith("4") && /pendapatan|penjualan/i.test(acc.name) && !/hpp|harga pokok/i.test(acc.name));
   
-  const cashBalance = (accounts.find(a => a.code === "1101")?.balance || 0) + 
-                      (accounts.find(a => a.code === "1102")?.balance || 0);
+  const cashBalance = accountTotal(acc => ["1110", "1111", "1112"].includes(acc.code));
 
-  const piutangBalance = accounts.find(a => a.code === "1103")?.balance || 0;
-  const hutangBalance = accounts.find(a => a.code === "2101")?.balance || 0;
-  
-  // Expenses = HPP + Beban + Purchases paid
-  const hppVal = accounts.find(a => a.code === "5101")?.balance || 0;
-  const bebanGaji = accounts.find(a => a.code === "6101")?.balance || 0;
-  const bebanListrik = accounts.find(a => a.code === "6102")?.balance || 0;
-  const totalExpensesVal = hppVal + bebanGaji + bebanListrik;
+  const totalExpensesVal = accountTotal(acc => acc.category === "Biaya" || /harga pokok|pembelian/i.test(acc.name));
 
   // Laba Bersih
   const netProfit = totalSalesVal - totalExpensesVal;
@@ -77,7 +68,7 @@ export default function Dashboard() {
   const activeOrders = productionOrders.slice(0, 5);
 
   // Invoices list (representing FOGO "Client Transactions Table")
-  const recentInvoices = salesInvoices.slice(0, 4);
+  const recentInvoices = cashBankTransactions.filter(tx => tx.type === "Masuk").slice(-4).reverse();
 
   return (
     <div className="space-y-6 animate-fade-in p-6">
@@ -328,21 +319,17 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-[#222533]/40 text-slate-600 dark:text-slate-300 font-medium">
-              {recentInvoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-800/10">
-                  <td className="py-3.5 text-brand-blue font-bold font-mono">#{inv.invoiceNo.substring(4, 8)}</td>
-                  <td className="py-3.5 font-bold text-brand-navy dark:text-slate-100">{inv.customerName}</td>
-                  <td className="py-3.5 text-slate-400 font-mono text-[11px]">{inv.date}</td>
+              {recentInvoices.map((tx) => (
+                <tr key={tx.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-800/10">
+                  <td className="py-3.5 text-brand-blue font-bold font-mono">#{tx.reference}</td>
+                  <td className="py-3.5 font-bold text-brand-navy dark:text-slate-100">{tx.description}</td>
+                  <td className="py-3.5 text-slate-400 font-mono text-[11px]">{tx.date}</td>
                   <td className="py-3.5">
-                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold ${
-                      inv.status === "Lunas"
-                        ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/5 dark:text-emerald-400"
-                        : "bg-amber-50 text-amber-600 dark:bg-amber-500/5 dark:text-amber-400"
-                    }`}>
-                      {inv.status === "Lunas" ? "Payment" : "Pending"}
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-600 dark:bg-emerald-500/5 dark:text-emerald-400">
+                      {tx.type}
                     </span>
                   </td>
-                  <td className="py-3.5 text-right font-bold text-brand-navy dark:text-slate-100">Rp {inv.amount.toLocaleString()}</td>
+                  <td className="py-3.5 text-right font-bold text-brand-navy dark:text-slate-100">Rp {tx.amount.toLocaleString()}</td>
                   <td className="py-3.5 text-center text-slate-400 hover:text-brand-navy cursor-pointer">
                     <MoreVertical className="w-4 h-4 mx-auto" />
                   </td>

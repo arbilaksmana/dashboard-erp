@@ -20,7 +20,7 @@ export default function Pajak() {
   const [selectedMonth, setSelectedMonth] = useState("Semua");
   const [selectedYear, setSelectedYear] = useState("2026");
 
-  const cashAccounts = accounts.filter(acc => ["1101", "1102"].includes(acc.code));
+  const cashAccounts = accounts.filter(acc => ["1110", "1111", "1112"].includes(acc.code));
 
   const ppnKeluaran = taxTransactions
     .filter(t => t.taxType === "PPN Keluaran")

@@ -29,17 +29,7 @@ export default function Produksi() {
 
   const finishedGoods = items.filter(i => i.category === "Barang Jadi");
 
-  const bomFormulations = {
-    "itm-5": [
-      { itemId: "itm-1", name: "Besi Beton 10mm", ratio: 1, unit: "Batang" },
-      { itemId: "itm-2", name: "Semen Portland 50kg", ratio: 2, unit: "Sak" },
-      { itemId: "itm-3", name: "Pasir Beton", ratio: 0.2, unit: "M3" }
-    ],
-    "itm-6": [
-      { itemId: "itm-2", name: "Semen Portland 50kg", ratio: 0.5, unit: "Sak" },
-      { itemId: "itm-3", name: "Pasir Beton", ratio: 0.07, unit: "M3" }
-    ]
-  };
+  const bomFormulations = {};
 
   useEffect(() => {
     if (targetItemId && targetQty > 0) {

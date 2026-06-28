@@ -30,7 +30,7 @@ export default function KasBank() {
   const [filterMonth, setFilterMonth] = useState("all");
   const [filterYear, setFilterYear] = useState("all");
 
-  const cashAccounts = accounts.filter(acc => ["1101", "1102"].includes(acc.code));
+  const cashAccounts = accounts.filter(acc => ["1110", "1111", "1112"].includes(acc.code));
 
   const handleOpenModal = (txType) => {
     setType(txType);

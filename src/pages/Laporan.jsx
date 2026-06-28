@@ -24,12 +24,14 @@ export default function Laporan() {
     }, 1500);
   };
 
+  const accountTotal = (matcher) => accounts.filter(matcher).reduce((sum, acc) => sum + (acc.balance || 0), 0);
+
   const getLabaRugi = () => {
-    const pendapatan = accounts.find(a => a.code === "4101")?.balance || 0;
-    const hpp = accounts.find(a => a.code === "5101")?.balance || 0;
-    const gaji = accounts.find(a => a.code === "6101")?.balance || 0;
-    const listrik = accounts.find(a => a.code === "6102")?.balance || 0;
-    const bebanPajak = accounts.find(a => a.code === "6201")?.balance || 0;
+    const pendapatan = accountTotal(a => a.code.startsWith("4") && /pendapatan|penjualan/i.test(a.name) && !/hpp|harga pokok/i.test(a.name));
+    const hpp = accountTotal(a => /harga pokok/i.test(a.name));
+    const gaji = accountTotal(a => /gaji|upah|tunjangan|thr/i.test(a.name));
+    const listrik = accountTotal(a => /listrik|telepon|telp|internet|pdam|air/i.test(a.name));
+    const bebanPajak = accountTotal(a => /pajak|pph/i.test(a.name) && a.category === "Biaya");
 
     const labaKotor = pendapatan - hpp;
     const totalBebanOperasional = gaji + listrik;
@@ -52,24 +54,24 @@ export default function Laporan() {
   const lr = getLabaRugi();
 
   const getNeraca = () => {
-    const kas = accounts.find(a => a.code === "1101")?.balance || 0;
-    const bank = accounts.find(a => a.code === "1102")?.balance || 0;
-    const piutang = accounts.find(a => a.code === "1103")?.balance || 0;
-    const rawMaterial = accounts.find(a => a.code === "1201")?.balance || 0;
-    const finishedGoods = accounts.find(a => a.code === "1202")?.balance || 0;
-    const ppnMasukan = accounts.find(a => a.code === "1301")?.balance || 0;
-    const peralatan = accounts.find(a => a.code === "1601")?.balance || 0;
+    const kas = accounts.find(a => a.code === "1110")?.balance || 0;
+    const bank = accountTotal(a => ["1111", "1112"].includes(a.code));
+    const piutang = accountTotal(a => a.code.startsWith("112"));
+    const rawMaterial = 0;
+    const finishedGoods = accounts.find(a => a.code === "1130")?.balance || 0;
+    const ppnMasukan = accountTotal(a => /ppn/i.test(a.name) && a.category === "Harta");
+    const peralatan = accountTotal(a => a.code.startsWith("12") && !["1200"].includes(a.code));
 
     const totalAset = kas + bank + piutang + rawMaterial + finishedGoods + ppnMasukan + peralatan;
 
-    const hutang = accounts.find(a => a.code === "2101")?.balance || 0;
-    const ppnKeluaran = accounts.find(a => a.code === "2201")?.balance || 0;
-    const pph21 = accounts.find(a => a.code === "2202")?.balance || 0;
+    const hutang = accountTotal(a => /^21/.test(a.code) && !/ppn|pajak|pph/i.test(a.name));
+    const ppnKeluaran = accountTotal(a => /ppn/i.test(a.name) && a.category === "Kewajiban");
+    const pph21 = accountTotal(a => /pph|pajak/i.test(a.name) && a.category === "Kewajiban");
 
     const totalKewajiban = hutang + ppnKeluaran + pph21;
 
-    const modal = accounts.find(a => a.code === "3101")?.balance || 0;
-    const saldoLaba = accounts.find(a => a.code === "3201")?.balance || 0;
+    const modal = accounts.find(a => a.code === "3000")?.balance || 0;
+    const saldoLaba = accounts.find(a => a.code === "3100")?.balance || 0;
     const totalEkuitas = modal + saldoLaba + lr.labaBersih;
 
     const totalPasiva = totalKewajiban + totalEkuitas;
@@ -91,13 +93,13 @@ export default function Laporan() {
 
     cashBankTransactions.forEach(t => {
       if (t.type === "Masuk") {
-        if (t.category === "Pelunasan Piutang" || t.category === "Pendapatan Lain") {
+        if (t.category === "Jurnal Umum" || t.category === "Pelunasan Piutang" || t.category === "Pendapatan Lain") {
           opsMasuk += t.amount;
         } else if (t.category === "Investasi Modal") {
           finMasuk += t.amount;
         }
       } else if (t.type === "Keluar") {
-        if (t.category === "Pelunasan Hutang" || t.category === "Beban Operasional" || t.category === "Beban Gaji") {
+        if (t.category === "Jurnal Umum" || t.category === "Pelunasan Hutang" || t.category === "Beban Operasional" || t.category === "Beban Gaji") {
           opsKeluar += t.amount;
         } else if (t.category === "Beban Pajak") {
           finKeluar += t.amount;

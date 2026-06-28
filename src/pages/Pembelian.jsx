@@ -34,7 +34,7 @@ export default function Pembelian() {
   const [paymentAmount, setPaymentAmount] = useState("");
 
   const purchaseableItems = items.filter(i => i.category === "Bahan Baku");
-  const cashAccounts = accounts.filter(acc => ["1101", "1102"].includes(acc.code));
+  const cashAccounts = accounts.filter(acc => ["1110", "1111", "1112"].includes(acc.code));
 
   const handleAddItemRow = () => {
     setInvoiceItems(prev => [...prev, { itemId: "", qty: 1, price: 0 }]);

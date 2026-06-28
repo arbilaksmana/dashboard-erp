@@ -1,21 +1,40 @@
 import React, { createContext, useState, useEffect } from "react";
 import {
   initialUsers,
-  initialAccounts,
-  initialItems,
-  initialCustomers,
-  initialSuppliers,
-  initialJournalEntries,
-  initialCashBankTransactions,
-  initialSalesInvoices,
-  initialPurchaseInvoices,
-  initialInventoryTransactions,
-  initialProductionOrders,
   initialTaxTransactions,
   initialActivityLogs
 } from "../db/mockDb";
+import {
+  accountingAccounts,
+  accountingCashBankTransactions,
+  accountingJournalEntries
+} from "../db/accountingData";
+import {
+  initialCustomers as opCustomers,
+  initialSuppliers as opSuppliers,
+  initialItems as opItems,
+  initialSalesInvoices as opSalesInvoices,
+  initialPurchaseInvoices as opPurchaseInvoices,
+  initialInventoryTransactions as opInventoryTransactions,
+} from "../db/operationalData";
 
 export const AppContext = createContext();
+
+const ACCOUNTING_DATASET_VERSION = "crp-2025-q4-with-ppn-2109";
+const hasCurrentAccountingDataset = () => localStorage.getItem("erp_accounting_dataset_version") === ACCOUNTING_DATASET_VERSION;
+const normalizeJournalEntries = (entries) => {
+  const byReference = new Map(entries.map(entry => [entry.reference, entry]));
+  accountingJournalEntries
+    .filter(entry => entry.reference?.startsWith("AJ-"))
+    .forEach(entry => {
+      if (!byReference.has(entry.reference)) byReference.set(entry.reference, entry);
+    });
+
+  return [...byReference.values()].map(entry => ({
+    ...entry,
+    isAdjusting: entry.isAdjusting || entry.reference?.startsWith("AJ-") || false
+  }));
+};
 
 export const AppProvider = ({ children }) => {
   // Load initial states from localStorage if available, else load mockDb defaults
@@ -31,52 +50,52 @@ export const AppProvider = ({ children }) => {
 
   const [accounts, setAccounts] = useState(() => {
     const saved = localStorage.getItem("erp_accounts");
-    return saved ? JSON.parse(saved) : initialAccounts;
+    return saved && hasCurrentAccountingDataset() ? JSON.parse(saved) : accountingAccounts;
   });
 
   const [items, setItems] = useState(() => {
     const saved = localStorage.getItem("erp_items");
-    return saved ? JSON.parse(saved) : initialItems;
+    return saved && hasCurrentAccountingDataset() ? JSON.parse(saved) : opItems;
   });
 
   const [customers, setCustomers] = useState(() => {
     const saved = localStorage.getItem("erp_customers");
-    return saved ? JSON.parse(saved) : initialCustomers;
+    return saved && hasCurrentAccountingDataset() ? JSON.parse(saved) : opCustomers;
   });
 
   const [suppliers, setSuppliers] = useState(() => {
     const saved = localStorage.getItem("erp_suppliers");
-    return saved ? JSON.parse(saved) : initialSuppliers;
+    return saved && hasCurrentAccountingDataset() ? JSON.parse(saved) : opSuppliers;
   });
 
   const [journalEntries, setJournalEntries] = useState(() => {
     const saved = localStorage.getItem("erp_journal_entries");
-    return saved ? JSON.parse(saved) : initialJournalEntries;
+    return saved && hasCurrentAccountingDataset() ? normalizeJournalEntries(JSON.parse(saved)) : normalizeJournalEntries(accountingJournalEntries);
   });
 
   const [cashBankTransactions, setCashBankTransactions] = useState(() => {
     const saved = localStorage.getItem("erp_cash_bank_transactions");
-    return saved ? JSON.parse(saved) : initialCashBankTransactions;
+    return saved && hasCurrentAccountingDataset() ? JSON.parse(saved) : accountingCashBankTransactions;
   });
 
   const [salesInvoices, setSalesInvoices] = useState(() => {
     const saved = localStorage.getItem("erp_sales_invoices");
-    return saved ? JSON.parse(saved) : initialSalesInvoices;
+    return saved && hasCurrentAccountingDataset() ? JSON.parse(saved) : opSalesInvoices;
   });
 
   const [purchaseInvoices, setPurchaseInvoices] = useState(() => {
     const saved = localStorage.getItem("erp_purchase_invoices");
-    return saved ? JSON.parse(saved) : initialPurchaseInvoices;
+    return saved && hasCurrentAccountingDataset() ? JSON.parse(saved) : opPurchaseInvoices;
   });
 
   const [inventoryTransactions, setInventoryTransactions] = useState(() => {
     const saved = localStorage.getItem("erp_inventory_transactions");
-    return saved ? JSON.parse(saved) : initialInventoryTransactions;
+    return saved && hasCurrentAccountingDataset() ? JSON.parse(saved) : opInventoryTransactions;
   });
 
   const [productionOrders, setProductionOrders] = useState(() => {
     const saved = localStorage.getItem("erp_production_orders");
-    return saved ? JSON.parse(saved) : initialProductionOrders;
+    return saved && hasCurrentAccountingDataset() ? JSON.parse(saved) : [];
   });
 
   const [taxTransactions, setTaxTransactions] = useState(() => {
@@ -104,6 +123,7 @@ export const AppProvider = ({ children }) => {
   }, [activeUser]);
   useEffect(() => {
     localStorage.setItem("erp_accounts", JSON.stringify(accounts));
+    localStorage.setItem("erp_accounting_dataset_version", ACCOUNTING_DATASET_VERSION);
   }, [accounts]);
   useEffect(() => {
     localStorage.setItem("erp_items", JSON.stringify(items));
@@ -1045,19 +1065,20 @@ export const AppProvider = ({ children }) => {
     localStorage.removeItem("erp_activity_logs");
     localStorage.removeItem("erp_menu_by_role");
     localStorage.removeItem("erp_reconciled_ids");
+    localStorage.setItem("erp_accounting_dataset_version", ACCOUNTING_DATASET_VERSION);
     
     setUsers(initialUsers);
     setActiveUser(initialUsers[0]);
-    setAccounts(initialAccounts);
-    setItems(initialItems);
-    setCustomers(initialCustomers);
-    setSuppliers(initialSuppliers);
-    setJournalEntries(initialJournalEntries);
-    setCashBankTransactions(initialCashBankTransactions);
-    setSalesInvoices(initialSalesInvoices);
-    setPurchaseInvoices(initialPurchaseInvoices);
-    setInventoryTransactions(initialInventoryTransactions);
-    setProductionOrders(initialProductionOrders);
+    setAccounts(accountingAccounts);
+    setItems(opItems);
+    setCustomers(opCustomers);
+    setSuppliers(opSuppliers);
+    setJournalEntries(accountingJournalEntries);
+    setCashBankTransactions(accountingCashBankTransactions);
+    setSalesInvoices(opSalesInvoices);
+    setPurchaseInvoices(opPurchaseInvoices);
+    setInventoryTransactions(opInventoryTransactions);
+    setProductionOrders([]);
     setTaxTransactions(initialTaxTransactions);
     setActivityLogs(initialActivityLogs);
     setMenuByRole({

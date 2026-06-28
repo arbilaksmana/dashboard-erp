@@ -87,8 +87,7 @@ export default function Akuntansi() {
 
   const getBukuBesarData = () => {
     const selectedAcc = accounts.find(a => a.code === selectedAccCode);
-    const firstChar = selectedAccCode.charAt(0);
-    const isAssetOrExpense = ["1", "5", "6"].includes(firstChar);
+    const isAssetOrExpense = ["Harta", "Biaya"].includes(selectedAcc?.category) || ["1", "5", "6"].includes(selectedAccCode.charAt(0));
 
     const ledgerRows = [];
     let balance = 0;
@@ -126,7 +125,7 @@ export default function Akuntansi() {
   const getTrialBalanceData = () => {
     const balanceMap = {};
     accounts.forEach(acc => {
-      balanceMap[acc.code] = { name: acc.name, code: acc.code, debitSum: 0, creditSum: 0 };
+      balanceMap[acc.code] = { name: acc.name, code: acc.code, category: acc.category, debitSum: 0, creditSum: 0 };
     });
 
     journalEntries.forEach(jr => {
@@ -142,8 +141,7 @@ export default function Akuntansi() {
     let totalTBcredit = 0;
 
     const list = Object.values(balanceMap).map(acc => {
-      const firstChar = acc.code.charAt(0);
-      const isAssetOrExpense = ["1", "5", "6"].includes(firstChar);
+      const isAssetOrExpense = ["Harta", "Biaya"].includes(acc.category) || ["1", "5", "6"].includes(acc.code.charAt(0));
       let debit = 0;
       let credit = 0;
 

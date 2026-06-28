@@ -34,7 +34,7 @@ export default function Penjualan() {
   const [paymentAmount, setPaymentAmount] = useState("");
 
   const sellableItems = items.filter(i => i.category === "Barang Jadi");
-  const cashAccounts = accounts.filter(acc => ["1101", "1102"].includes(acc.code));
+  const cashAccounts = accounts.filter(acc => ["1110", "1111", "1112"].includes(acc.code));
 
   const handleAddItemRow = () => {
     setInvoiceItems(prev => [...prev, { itemId: "", qty: 1, price: 0 }]);
